@@ -12,6 +12,8 @@ import { AssessmentPage } from '@/pages/Assessment';
 import { OnboardingPage } from '@/pages/Onboarding';
 import Scheduling from '@/pages/Scheduling';
 import Confirmation from '@/pages/Confirmation';
+import { SupportPage } from '@/pages/Support';
+import { SupportDashboardPage } from '@/pages/SupportDashboard';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 /**
@@ -65,6 +67,22 @@ export function Routes() {
             element={
               <ProtectedRoute>
                 <Confirmation />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/support"
+            element={
+              <ProtectedRoute>
+                <SupportPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/support/dashboard"
+            element={
+              <ProtectedRoute>
+                <SupportDashboardPage />
               </ProtectedRoute>
             }
           />

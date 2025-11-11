@@ -96,6 +96,8 @@
     "test:ocr:integration": "node tests/integration/ocrProcessing.test.js",
     "test:questionnaires": "node tests/unit/questionnaireTrends.test.js",
     "test:questionnaires:integration": "node tests/integration/questionnairesReferrals.test.js",
+    "test:support": "node tests/unit/supportChat.test.js",
+    "test:support:integration": "node tests/integration/supportChat.test.js",
     "verify:env": "node scripts/verifyEnv.js",
     "kinship:validate": "node scripts/generateKinshipMapping.js validate",
     "kinship:export": "node scripts/generateKinshipMapping.js export"

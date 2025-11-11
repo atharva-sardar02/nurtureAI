@@ -92,6 +92,33 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
+    
+    // Support chats - users can create and read their own chats, support team can read all active chats
+    match /supportChats/{chatId} {
+      // Users can create their own chats
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      
+      // Users can read and update their own chats
+      allow read, update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.assignedTo == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Support team can read all active chats and update assigned chats
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.status == 'active' ||
+        isAdmin()
+      );
+      
+      // Support team can send messages and assign/resolve chats
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.assignedTo == request.auth.uid ||
+        isAdmin()
+      );
+    }
   }
 }
 

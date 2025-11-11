@@ -4,7 +4,7 @@
  */
 
 import { Button } from "@/components/ui/button"
-import { LogOut, Menu, Home, FileText, UserPlus, Calendar } from "lucide-react"
+import { LogOut, Menu, Home, FileText, UserPlus, Calendar, MessageCircle } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useState } from "react"
@@ -79,18 +79,30 @@ export function Header({ title = "NurtureAI" }) {
                 <UserPlus className="w-4 h-4" />
                 Onboarding
               </button>
-              <button
-                onClick={() => navigate("/scheduling")}
-                className={cn(
-                  "text-sm font-medium transition-colors flex items-center gap-2",
-                  isActive("/scheduling") 
-                    ? "text-foreground" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Calendar className="w-4 h-4" />
-                Scheduling
-              </button>
+                   <button
+                     onClick={() => navigate("/scheduling")}
+                     className={cn(
+                       "text-sm font-medium transition-colors flex items-center gap-2",
+                       isActive("/scheduling")
+                         ? "text-foreground"
+                         : "text-muted-foreground hover:text-foreground"
+                     )}
+                   >
+                     <Calendar className="w-4 h-4" />
+                     Scheduling
+                   </button>
+                   <button
+                     onClick={() => navigate("/support")}
+                     className={cn(
+                       "text-sm font-medium transition-colors flex items-center gap-2",
+                       isActive("/support")
+                         ? "text-foreground"
+                         : "text-muted-foreground hover:text-foreground"
+                     )}
+                   >
+                     <MessageCircle className="w-4 h-4" />
+                     Support
+                   </button>
               <span className="text-sm text-muted-foreground">
                 {user.email}
               </span>
@@ -165,21 +177,36 @@ export function Header({ title = "NurtureAI" }) {
                 <UserPlus className="w-4 h-4" />
                 Onboarding
               </button>
-              <button
-                onClick={() => {
-                  navigate("/scheduling")
-                  setMobileMenuOpen(false)
-                }}
-                className={cn(
-                  "text-sm font-medium transition-colors text-left flex items-center gap-2",
-                  isActive("/scheduling") 
-                    ? "text-foreground" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Calendar className="w-4 h-4" />
-                Scheduling
-              </button>
+                   <button
+                     onClick={() => {
+                       navigate("/scheduling")
+                       setMobileMenuOpen(false)
+                     }}
+                     className={cn(
+                       "text-sm font-medium transition-colors text-left flex items-center gap-2",
+                       isActive("/scheduling")
+                         ? "text-foreground"
+                         : "text-muted-foreground hover:text-foreground"
+                     )}
+                   >
+                     <Calendar className="w-4 h-4" />
+                     Scheduling
+                   </button>
+                   <button
+                     onClick={() => {
+                       navigate("/support")
+                       setMobileMenuOpen(false)
+                     }}
+                     className={cn(
+                       "text-sm font-medium transition-colors text-left flex items-center gap-2",
+                       isActive("/support")
+                         ? "text-foreground"
+                         : "text-muted-foreground hover:text-foreground"
+                     )}
+                   >
+                     <MessageCircle className="w-4 h-4" />
+                     Support
+                   </button>
               <div className="text-sm text-muted-foreground pt-2 border-t border-border">
                 {user.email}
               </div>
