@@ -23,6 +23,7 @@
 
 import { importCSVToFirestore, getCSVPath } from './importCSV.js';
 import { transformKinshipData } from '../src/utils/kinshipMapping.js';
+import { transformQuestionnaireData } from '../src/utils/questionnaireMapping.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -165,21 +166,18 @@ const IMPORT_CONFIG = [
     file: 'questionnaires.csv',
     collection: 'questionnaires',
     transform: (row) => {
-      // Validate questionnaire type
-      const validTypes = ['PHQ-A', 'GAD-7', 'PSC-17', 'SDQ'];
-      if (row.type && !validTypes.includes(row.type)) {
-        console.warn(`⚠️  Invalid questionnaire type: ${row.type}`);
-      }
+      // Apply questionnaire type transformation
+      const transformed = transformQuestionnaireData(row);
       
       // Parse numeric scores
       const numericFields = ['score', 'totalScore'];
       numericFields.forEach(field => {
-        if (row[field] && !isNaN(row[field])) {
-          row[field] = parseFloat(row[field]);
+        if (transformed[field] && !isNaN(transformed[field])) {
+          transformed[field] = parseFloat(transformed[field]);
         }
       });
       
-      return row;
+      return transformed;
     },
   },
   {

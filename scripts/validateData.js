@@ -143,7 +143,7 @@ export async function validateKinshipCodes() {
 export async function validateQuestionnaireTypes() {
   const db = getFirestore();
   const issues = [];
-  const validTypes = ['PHQ-A', 'GAD-7', 'PSC-17', 'SDQ'];
+  const validTypes = ['PHQ_A', 'GAD_7', 'PSC_17', 'SDQ', 'OTHER']; // Standardized codes
   
   console.log(`\n🔍 Validating questionnaire types`);
   
@@ -151,14 +151,28 @@ export async function validateQuestionnaireTypes() {
   
   snapshot.forEach(doc => {
     const data = doc.data();
-    const type = data.type;
+    const type = data.type; // Should be standardized code (PHQ_A, GAD_7, etc.)
+    const typeCode = data.typeCode; // Original numeric code
     
+    // Check if type is a valid standardized code
     if (type && !validTypes.includes(type)) {
       issues.push({
         documentId: doc.id,
         field: 'type',
         value: type,
+        originalCode: typeCode,
         issue: `Invalid questionnaire type: ${type}. Must be one of: ${validTypes.join(', ')}`,
+      });
+    }
+    
+    // Warn if typeCode exists but type is missing (transformation may have failed)
+    if (typeCode && !type) {
+      issues.push({
+        documentId: doc.id,
+        field: 'type',
+        value: null,
+        originalCode: typeCode,
+        issue: `Questionnaire has typeCode (${typeCode}) but missing standardized type field`,
       });
     }
   });

@@ -1,22 +1,65 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/contexts/AuthContext"
 import { Header } from "@/components/layout/header"
+import { resetPassword } from "@/services/firebase/auth"
 
 export function LoginPage() {
+  const navigate = useNavigate()
+  const { user, loading: authLoading } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isSignUp, setIsSignUp] = useState(false)
+  const [showPasswordReset, setShowPasswordReset] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const [loading, setLoading] = useState(false)
+  const [validationErrors, setValidationErrors] = useState({})
   const { signIn, signUp, signInWithGoogle } = useAuth()
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/", { replace: true })
+    }
+  }, [user, authLoading, navigate])
+
+  // Form validation
+  const validateForm = () => {
+    const errors = {}
+    
+    // Email validation
+    if (!email) {
+      errors.email = "Email is required"
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Please enter a valid email address"
+    }
+    
+    // Password validation
+    if (!password) {
+      errors.password = "Password is required"
+    } else if (isSignUp && password.length < 6) {
+      errors.password = "Password must be at least 6 characters"
+    }
+    
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
+    setSuccess("")
+    setValidationErrors({})
+    
+    if (!validateForm()) {
+      return
+    }
+    
     setLoading(true)
 
     const result = isSignUp 
@@ -26,6 +69,36 @@ export function LoginPage() {
     setLoading(false)
 
     if (!result.success) {
+      setError(result.error)
+    } else if (isSignUp) {
+      setSuccess("Account created successfully! Redirecting...")
+    }
+  }
+
+  const handlePasswordReset = async (e) => {
+    e.preventDefault()
+    setError("")
+    setSuccess("")
+    setValidationErrors({})
+    
+    if (!email) {
+      setValidationErrors({ email: "Email is required" })
+      return
+    }
+    
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setValidationErrors({ email: "Please enter a valid email address" })
+      return
+    }
+    
+    setLoading(true)
+    const result = await resetPassword(email)
+    setLoading(false)
+    
+    if (result.success) {
+      setSuccess("Password reset email sent! Check your inbox.")
+      setShowPasswordReset(false)
+    } else {
       setError(result.error)
     }
   }
@@ -46,15 +119,23 @@ export function LoginPage() {
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>{isSignUp ? "Create Account" : "Sign In"}</CardTitle>
+            <CardTitle>
+              {showPasswordReset 
+                ? "Reset Password" 
+                : isSignUp 
+                  ? "Create Account" 
+                  : "Sign In"}
+            </CardTitle>
             <CardDescription>
-              {isSignUp 
-                ? "Create an account to get started" 
-                : "Sign in to your account to continue"}
+              {showPasswordReset
+                ? "Enter your email and we'll send you a password reset link"
+                : isSignUp 
+                  ? "Create an account to get started" 
+                  : "Sign in to your account to continue"}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={showPasswordReset ? handlePasswordReset : handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -62,30 +143,85 @@ export function LoginPage() {
                   type="email"
                   placeholder="your@email.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    if (validationErrors.email) {
+                      setValidationErrors({ ...validationErrors, email: "" })
+                    }
+                  }}
+                  className={validationErrors.email ? "border-destructive" : ""}
                   required
                 />
+                {validationErrors.email && (
+                  <p className="text-sm text-destructive">{validationErrors.email}</p>
+                )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
+              {!showPasswordReset && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      if (validationErrors.password) {
+                        setValidationErrors({ ...validationErrors, password: "" })
+                      }
+                    }}
+                    className={validationErrors.password ? "border-destructive" : ""}
+                    required
+                  />
+                  {validationErrors.password && (
+                    <p className="text-sm text-destructive">{validationErrors.password}</p>
+                  )}
+                </div>
+              )}
               {error && (
                 <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
                   {error}
                 </div>
               )}
+              {success && (
+                <div className="text-sm text-green-600 bg-green-50 p-3 rounded-md">
+                  {success}
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
+                {loading ? "Loading..." : showPasswordReset ? "Send Reset Email" : isSignUp ? "Sign Up" : "Sign In"}
               </Button>
             </form>
+            {!showPasswordReset && !isSignUp && (
+              <div className="mt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordReset(true)
+                    setError("")
+                    setSuccess("")
+                  }}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
+            {showPasswordReset && (
+              <div className="mt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordReset(false)
+                    setError("")
+                    setSuccess("")
+                  }}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Back to sign in
+                </button>
+              </div>
+            )}
             <div className="mt-4">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">

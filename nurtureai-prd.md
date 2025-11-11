@@ -121,9 +121,9 @@
 - `OnboardingWizard.jsx` - Main form container with progress tracking
 - `WelcomeScreen.jsx` - Show referral source if applicable ("Referred by: School X")
 - `DemographicInfo.jsx` - Child and parent demographics
-- `KinshipSelector.jsx` - Relationship dropdown (from kinships.csv - note: uses numeric codes requiring mapping to labels like "mother", "father", "guardian")
+- `KinshipSelector.jsx` - Relationship dropdown (from kinships.csv - uses numeric codes mapped to labels with consent eligibility flags)
 - `ContactInfo.jsx` - Contact details
-- `ConsentForm.jsx` - Display kinship relationship, data retention notice (90 days)
+- `ConsentForm.jsx` - Display kinship relationship with consent eligibility, data retention notice (90 days), guardian proof option for otherCaregiver
 - `QuestionnaireHistorySummary.jsx` - Show past assessment scores if available
 - `DataDeletionOption.jsx` - User-triggered data deletion interface
 - `ProgressBar.jsx` - Visual progress indicator
@@ -313,7 +313,11 @@ onboardingApplications/
       ├── userId (string)
       ├── patientId (string) - links to patients
       ├── guardianId (string) - links to guardians
-      ├── kinship (object) - from kinships.csv (stores numeric code + mapped label, e.g., {code: 1, label: "mother"})
+      ├── kinship (object) - from kinships.csv (stores code, label, and consent eligibility)
+      │   ├── code (number) - kinship code (1=mother, 2=father, 3=legalGuardian, 4=otherCaregiver)
+      │   ├── label (string) - human-readable label (e.g., "mother", "legalGuardian")
+      │   └── consentEligible (boolean) - whether this relationship allows consent
+      ├── guardianProof (string, optional) - "provided" | "not_provided" - for otherCaregiver with legal guardianship
       ├── status (string: 'started' | 'assessment_complete' | 'insurance_submitted' | 'scheduled' | 'complete')
       ├── assessmentData (object)
       ├── demographicData (object)
@@ -380,7 +384,12 @@ appointments/
 questionnaires/
   ├── {questionnaireId}/
       ├── patientId (string)
-      ├── type (string: 'PHQ-A' | 'GAD-7' | 'PSC-17' | 'SDQ') - from questionnaires.csv
+      ├── type (string: 'PHQ_A' | 'GAD_7' | 'PSC_17' | 'SDQ' | 'OTHER') - standardized code from questionnaires.csv
+      ├── typeCode (number) - original numeric code from CSV (1=PHQ-A, 2=GAD-7, 3=PSC-17, 4=SDQ)
+      ├── typeLabel (string) - human-readable label (e.g., "PHQ-A", "GAD-7")
+      ├── typeMetadata (object) - metadata for UI/logic
+      │   ├── scored (boolean) - whether questionnaire has scoring
+      │   └── riskScreen (boolean) - whether questionnaire is used for risk screening
       ├── responses (object)
       ├── score (number)
       ├── severity (string: 'minimal' | 'mild' | 'moderate' | 'severe')
@@ -1037,11 +1046,19 @@ service cloud.firestore {
 - Store both code and label in onboardingApplications.kinship field
 - Show readable label in appointment confirmations
 
-### Questionnaire Display (Q12) - **DECISION MADE**
+### Questionnaire Display (Q12) - **DECISION MADE** ✅
 **Decision:** Yes—read-only summary if history exists: last score, date, and trend cue. Don't block onboarding if absent  
 **Rationale:** Provides context without overwhelming; optional enhancement  
 **Implementation:**
-- Query questionnaires.csv for patient history
+- Query questionnaires collection for patient history
+- **Questionnaire Type Mapping:**
+  - `1` = PHQ-A (adolescent PHQ-9) - {code: "PHQ_A", label: "PHQ-A", scored: true, riskScreen: true}
+  - `2` = GAD-7 - {code: "GAD_7", label: "GAD-7", scored: true, riskScreen: true}
+  - `3` = PSC-17 - {code: "PSC_17", label: "PSC-17", scored: true, riskScreen: true}
+  - `4` = SDQ - {code: "SDQ", label: "SDQ", scored: true, riskScreen: true}
+  - Other/Unknown → OTHER - {code: "OTHER", label: "Other (read-only)", scored: false, riskScreen: false}
+- Use `typeLabel` for display, `typeMetadata.scored` and `typeMetadata.riskScreen` for UI logic
+- Display questionnaire type using standardized labels (PHQ-A, GAD-7, PSC-17, SDQ)
 - Display card: "Previous Assessment: PHQ-A score 12 (moderate) on 10/15/2024"
 - Show trend: ↑ improving, → stable, ↓ worsening
 - Continue if no history
