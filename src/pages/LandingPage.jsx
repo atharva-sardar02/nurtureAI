@@ -3,7 +3,7 @@
  * Main page displayed after authentication
  */
 
-import { AssessmentChat } from "@/components/chat/assessment-chat"
+import { ChatInterface } from "@/components/chat/ChatInterface"
 import { Header } from "@/components/common/Header"
 import { Footer } from "@/components/common/Footer"
 
@@ -13,7 +13,7 @@ export function LandingPage() {
       <Header />
       <main className="flex-1">
         <div className="h-[calc(100vh-80px)]">
-          <AssessmentChat />
+          <ChatInterface />
         </div>
       </main>
       <Footer />

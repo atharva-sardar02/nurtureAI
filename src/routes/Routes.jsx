@@ -8,6 +8,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { LoginPage } from '@/pages/LoginPage';
 import { LandingPage } from '@/pages/LandingPage';
 import { Landing } from '@/pages/Landing';
+import { AssessmentPage } from '@/pages/Assessment';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 /**
@@ -29,6 +30,14 @@ export function Routes() {
             element={
               <ProtectedRoute>
                 <LandingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/assessment"
+            element={
+              <ProtectedRoute>
+                <AssessmentPage />
               </ProtectedRoute>
             }
           />

@@ -11,6 +11,13 @@ import {
   updateDoc,
   serverTimestamp,
   Timestamp,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit,
+  deleteDoc,
 } from 'firebase/firestore';
 import { db } from './config.js';
 
@@ -110,10 +117,119 @@ export async function updateLastLogin(userId) {
   }
 }
 
+/**
+ * Conversation Storage Functions
+ */
+
+/**
+ * Save a conversation to Firestore
+ * @param {string} userId - User ID
+ * @param {Array} messages - Array of message objects
+ * @param {Object} assessmentData - Assessment data
+ * @param {string} onboardingApplicationId - Optional onboarding application ID
+ * @returns {Promise<{success: boolean, conversationId?: string, error?: string}>}
+ */
+export async function saveConversation(userId, messages, assessmentData = null, onboardingApplicationId = null) {
+  try {
+    const conversationRef = await addDoc(collection(db, 'conversations'), {
+      userId,
+      messages: messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp instanceof Date 
+          ? Timestamp.fromDate(msg.timestamp) 
+          : Timestamp.now(),
+      })),
+      assessmentData,
+      onboardingApplicationId,
+      createdAt: serverTimestamp(),
+      expiresAt: Timestamp.fromDate(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)), // 90 days from now
+    });
+
+    console.log('✅ Conversation saved:', conversationRef.id);
+    return { success: true, conversationId: conversationRef.id };
+  } catch (error) {
+    console.error('❌ Error saving conversation:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Get conversations for a user
+ * @param {string} userId - User ID
+ * @param {number} limitCount - Maximum number of conversations to retrieve
+ * @returns {Promise<{success: boolean, conversations?: Array, error?: string}>}
+ */
+export async function getUserConversations(userId, limitCount = 10) {
+  try {
+    const q = query(
+      collection(db, 'conversations'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const conversations = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return { success: true, conversations };
+  } catch (error) {
+    console.error('❌ Error getting conversations:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Delete a conversation
+ * @param {string} conversationId - Conversation ID
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function deleteConversation(conversationId) {
+  try {
+    await deleteDoc(doc(db, 'conversations', conversationId));
+    console.log('✅ Conversation deleted:', conversationId);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error deleting conversation:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Delete all conversations for a user (data deletion request)
+ * @param {string} userId - User ID
+ * @returns {Promise<{success: boolean, deletedCount?: number, error?: string}>}
+ */
+export async function deleteAllUserConversations(userId) {
+  try {
+    const q = query(
+      collection(db, 'conversations'),
+      where('userId', '==', userId)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+
+    console.log('✅ All conversations deleted for user:', userId);
+    return { success: true, deletedCount: querySnapshot.docs.length };
+  } catch (error) {
+    console.error('❌ Error deleting user conversations:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export default {
   createUserProfile,
   getUserProfile,
   updateUserProfile,
   updateLastLogin,
+  saveConversation,
+  getUserConversations,
+  deleteConversation,
+  deleteAllUserConversations,
 };
 
