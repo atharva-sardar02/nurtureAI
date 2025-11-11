@@ -1,9 +1,13 @@
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
-import { useState } from "react"
+import { useAuth } from "@/contexts/AuthContext"
 
-export function Header({ title = "Daybreak Health", showMenu = true, isAuthenticated = false, onLogout }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+export function Header({ title = "NurtureAI" }) {
+  const { user, signOut } = useAuth()
+
+  const handleSignOut = async () => {
+    await signOut()
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -20,9 +24,12 @@ export function Header({ title = "Daybreak Health", showMenu = true, isAuthentic
           </div>
         </div>
 
-        {isAuthenticated && (
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={onLogout} className="flex items-center gap-2">
+        {user && (
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground hidden sm:inline">
+              {user.email}
+            </span>
+            <Button variant="ghost" size="sm" onClick={handleSignOut} className="flex items-center gap-2">
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Sign Out</span>
             </Button>
