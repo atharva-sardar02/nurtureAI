@@ -32,16 +32,24 @@ service cloud.firestore {
     
     // Onboarding applications - owner access only
     match /onboardingApplications/{applicationId} {
-      allow read, write: if isOwner(resource.data.userId);
+      allow read, write: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid
+      );
     }
     
     // Conversations - owner access with 90-day TTL enforcement
     match /conversations/{conversationId} {
-      allow read: if isAuthenticated() && 
-                  get(/databases/$(database)/documents/onboardingApplications/$(resource.data.applicationId)).data.userId == request.auth.uid;
-      allow create: if isAuthenticated();
-      allow update: if isOwner(resource.data.userId) || isAdmin();
-      allow delete: if isOwner(resource.data.userId) && resource.data.userDeletionRequested == true;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid && 
+        resource.data.userDeletionRequested == true
+      ) || isAdmin();
     }
     
     // Clinicians and availability - read by authenticated users (for matching)
@@ -50,10 +58,46 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // Insurance coverages - owner access only
+    // Insurance coverages - guardian access only
     match /insuranceCoverages/{coverageId} {
       allow read, write: if isAuthenticated() && 
                           get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians contains request.auth.uid;
+    }
+    
+    // Clinician availabilities - read by authenticated users (for scheduling)
+    match /clinicianAvailabilities/{availabilityId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Clinician credentialed insurances - read by authenticated users (for matching)
+    match /clinicianCredentialedInsurances/{junctionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Credentialed insurances - read by authenticated users
+    match /credentialedInsurances/{insuranceId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Referral members - guardian access
+    match /referralMembers/{memberId} {
+      allow read: if isAuthenticated() && 
+                  request.auth.uid in get(/databases/$(database)/documents/referrals/$(resource.data.referralId)).data.guardians;
+    }
+    
+    // Contracts - read by authenticated users
+    match /contracts/{contractId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Org contracts - read by authenticated users
+    match /orgContracts/{orgContractId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
     
     // Appointments - accessible to patient guardian and assigned clinician
