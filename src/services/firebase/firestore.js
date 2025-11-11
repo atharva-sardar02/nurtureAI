@@ -107,9 +107,10 @@ export async function updateUserProfile(userId, updates) {
 export async function updateLastLogin(userId) {
   try {
     const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
+    // Use setDoc with merge to create if doesn't exist, or update if it does
+    await setDoc(userRef, {
       lastLoginAt: serverTimestamp(),
-    });
+    }, { merge: true });
     return { success: true };
   } catch (error) {
     console.error('Error updating last login:', error);

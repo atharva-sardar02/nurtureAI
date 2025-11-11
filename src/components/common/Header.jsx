@@ -4,15 +4,19 @@
  */
 
 import { Button } from "@/components/ui/button"
-import { LogOut, Menu } from "lucide-react"
+import { LogOut, Menu, Home, FileText, UserPlus, Calendar } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { useState } from "react"
+import { cn } from "@/lib/utils"
 
 export function Header({ title = "NurtureAI" }) {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const isActive = (path) => location.pathname === path
 
   const handleSignOut = async () => {
     await signOut()
@@ -41,9 +45,51 @@ export function Header({ title = "NurtureAI" }) {
             <nav className="hidden md:flex items-center gap-6">
               <button
                 onClick={() => navigate("/")}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                className={cn(
+                  "text-sm font-medium transition-colors flex items-center gap-2",
+                  isActive("/") 
+                    ? "text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
               >
+                <Home className="w-4 h-4" />
                 Home
+              </button>
+              <button
+                onClick={() => navigate("/assessment")}
+                className={cn(
+                  "text-sm font-medium transition-colors flex items-center gap-2",
+                  isActive("/assessment") 
+                    ? "text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <FileText className="w-4 h-4" />
+                Assessment
+              </button>
+              <button
+                onClick={() => navigate("/onboarding")}
+                className={cn(
+                  "text-sm font-medium transition-colors flex items-center gap-2",
+                  isActive("/onboarding") 
+                    ? "text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <UserPlus className="w-4 h-4" />
+                Onboarding
+              </button>
+              <button
+                onClick={() => navigate("/scheduling")}
+                className={cn(
+                  "text-sm font-medium transition-colors flex items-center gap-2",
+                  isActive("/scheduling") 
+                    ? "text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Calendar className="w-4 h-4" />
+                Scheduling
               </button>
               <span className="text-sm text-muted-foreground">
                 {user.email}
@@ -79,11 +125,62 @@ export function Header({ title = "NurtureAI" }) {
                   navigate("/")
                   setMobileMenuOpen(false)
                 }}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-left"
+                className={cn(
+                  "text-sm font-medium transition-colors text-left flex items-center gap-2",
+                  isActive("/") 
+                    ? "text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
               >
+                <Home className="w-4 h-4" />
                 Home
               </button>
-              <div className="text-sm text-muted-foreground">
+              <button
+                onClick={() => {
+                  navigate("/assessment")
+                  setMobileMenuOpen(false)
+                }}
+                className={cn(
+                  "text-sm font-medium transition-colors text-left flex items-center gap-2",
+                  isActive("/assessment") 
+                    ? "text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <FileText className="w-4 h-4" />
+                Assessment
+              </button>
+              <button
+                onClick={() => {
+                  navigate("/onboarding")
+                  setMobileMenuOpen(false)
+                }}
+                className={cn(
+                  "text-sm font-medium transition-colors text-left flex items-center gap-2",
+                  isActive("/onboarding") 
+                    ? "text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <UserPlus className="w-4 h-4" />
+                Onboarding
+              </button>
+              <button
+                onClick={() => {
+                  navigate("/scheduling")
+                  setMobileMenuOpen(false)
+                }}
+                className={cn(
+                  "text-sm font-medium transition-colors text-left flex items-center gap-2",
+                  isActive("/scheduling") 
+                    ? "text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Calendar className="w-4 h-4" />
+                Scheduling
+              </button>
+              <div className="text-sm text-muted-foreground pt-2 border-t border-border">
                 {user.email}
               </div>
               <Button variant="ghost" size="sm" onClick={handleSignOut} className="flex items-center gap-2 justify-start">

@@ -5,10 +5,15 @@
 
 const { onCall } = require('firebase-functions/v2/https');
 const { ImageAnnotatorClient } = require('@google-cloud/vision');
-const admin = require('firebase-admin');
 
-// Initialize Vision client
-const vision = new ImageAnnotatorClient();
+// Initialize Vision client lazily to avoid timeout during module load
+let vision = null;
+function getVisionClient() {
+  if (!vision) {
+    vision = new ImageAnnotatorClient();
+  }
+  return vision;
+}
 
 /**
  * Extract insurance information from OCR text
@@ -29,10 +34,10 @@ function extractInsuranceData(text) {
   // Extract Member ID patterns
   // Common patterns: "MEMBER ID:", "ID:", "MEMBER #", "SUBSCRIBER ID"
   const memberIdPatterns = [
-    /MEMBER\s*ID[:\s]*([A-Z0-9\-]+)/i,
-    /ID[:\s]*([A-Z0-9\-]{6,})/i,
-    /MEMBER\s*#?[:\s]*([A-Z0-9\-]+)/i,
-    /SUBSCRIBER\s*ID[:\s]*([A-Z0-9\-]+)/i,
+    /MEMBER\s*ID[:\s]*([A-Z0-9-]+)/i,
+    /ID[:\s]*([A-Z0-9-]{6,})/i,
+    /MEMBER\s*#?[:\s]*([A-Z0-9-]+)/i,
+    /SUBSCRIBER\s*ID[:\s]*([A-Z0-9-]+)/i,
   ];
 
   for (const pattern of memberIdPatterns) {
@@ -46,9 +51,9 @@ function extractInsuranceData(text) {
   // Extract Group Number patterns
   // Common patterns: "GROUP:", "GROUP #", "GRP:", "POLICY GROUP"
   const groupNumberPatterns = [
-    /GROUP\s*#?[:\s]*([A-Z0-9\-]+)/i,
-    /GRP[:\s]*([A-Z0-9\-]+)/i,
-    /POLICY\s*GROUP[:\s]*([A-Z0-9\-]+)/i,
+    /GROUP\s*#?[:\s]*([A-Z0-9-]+)/i,
+    /GRP[:\s]*([A-Z0-9-]+)/i,
+    /POLICY\s*GROUP[:\s]*([A-Z0-9-]+)/i,
   ];
 
   for (const pattern of groupNumberPatterns) {
@@ -82,8 +87,8 @@ function extractInsuranceData(text) {
 
   // Extract Plan Name (usually after "PLAN:", "PLAN NAME:", etc.)
   const planNamePatterns = [
-    /PLAN\s*NAME[:\s]*([A-Z0-9\s\-]+)/i,
-    /PLAN[:\s]*([A-Z0-9\s\-]+)/i,
+    /PLAN\s*NAME[:\s]*([A-Z0-9\s-]+)/i,
+    /PLAN[:\s]*([A-Z0-9\s-]+)/i,
   ];
 
   for (const pattern of planNamePatterns) {
@@ -125,7 +130,8 @@ exports.processInsuranceCard = onCall(
       const imageBuffer = await imageResponse.arrayBuffer();
 
       // Perform OCR using Google Cloud Vision API
-      const [result] = await vision.documentTextDetection(
+      const visionClient = getVisionClient();
+      const [result] = await visionClient.documentTextDetection(
         Buffer.from(imageBuffer)
       );
 

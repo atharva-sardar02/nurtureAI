@@ -1,13 +1,10 @@
-const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const functions = require('firebase-functions');
 
 admin.initializeApp();
 
-// Import function modules
-const { processInsuranceCard } = require('./processInsuranceCard');
-
-// Export functions
-exports.processInsuranceCard = processInsuranceCard.processInsuranceCard;
+// Import and export functions
+exports.processInsuranceCard = require('./processInsuranceCard').processInsuranceCard;
 
 // Placeholder for future Cloud Functions
 // Functions to be added in later PRs:

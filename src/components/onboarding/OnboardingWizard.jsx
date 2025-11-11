@@ -10,7 +10,7 @@ import { WelcomeScreen } from "./WelcomeScreen"
 import { DemographicInfo } from "./DemographicInfo"
 import { ContactInfo } from "./ContactInfo"
 import { ConsentForm } from "./ConsentForm"
-import { InsuranceInfo } from "./InsuranceInfo"
+import { InsuranceVerification } from "@/components/insurance/InsuranceVerification"
 import { QuestionnaireHistorySummary } from "./QuestionnaireHistorySummary"
 import { DataDeletionOption } from "./DataDeletionOption"
 import { ReviewStep } from "./ReviewStep"
@@ -21,7 +21,8 @@ export function OnboardingWizard() {
     nextStep, 
     prevStep, 
     getProgress,
-    loading 
+    loading,
+    updateFormData
   } = useOnboarding()
 
   const progress = getProgress()
@@ -61,7 +62,16 @@ export function OnboardingWizard() {
       case ONBOARDING_STEPS.CONSENT:
         return <ConsentForm />
       case ONBOARDING_STEPS.INSURANCE:
-        return <InsuranceInfo />
+        return <InsuranceVerification 
+          onVerificationComplete={(data) => {
+            // Update onboarding form data with verified insurance info
+            updateFormData({
+              insuranceProvider: data.provider,
+              insuranceMemberId: data.memberId,
+              insuranceGroupNumber: data.groupNumber,
+            });
+          }}
+        />
       case ONBOARDING_STEPS.QUESTIONNAIRE_HISTORY:
         return <QuestionnaireHistorySummary />
       case ONBOARDING_STEPS.REVIEW:
