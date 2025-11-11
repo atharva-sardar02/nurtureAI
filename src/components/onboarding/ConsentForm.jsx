@@ -14,7 +14,11 @@ import { KinshipSelector } from "./KinshipSelector"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export function ConsentForm() {
-  const { formData, updateFormData } = useOnboarding()
+  const { formData, updateFormData, validateStep, ONBOARDING_STEPS } = useOnboarding()
+  
+  // Get validation errors for this step
+  const validation = validateStep(ONBOARDING_STEPS.CONSENT)
+  const errors = validation.errors || {}
 
   const formatKinshipLabel = (label) => {
     if (!label) return ""
@@ -31,10 +35,15 @@ export function ConsentForm() {
         <CardDescription>Please confirm your relationship to the child and provide consent</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <KinshipSelector
-          value={formData.kinship}
-          onChange={(kinship) => updateFormData({ kinship })}
-        />
+        <div className="space-y-2">
+          <KinshipSelector
+            value={formData.kinship}
+            onChange={(kinship) => updateFormData({ kinship })}
+          />
+          {errors.kinship && (
+            <p className="text-sm text-destructive" role="alert">{errors.kinship}</p>
+          )}
+        </div>
 
         {formData.kinship && !formData.kinship.consentEligible && (
           <div className="space-y-2">
@@ -89,11 +98,15 @@ export function ConsentForm() {
                 onCheckedChange={(checked) => 
                   updateFormData({ dataRetentionConsent: checked })
                 }
+                aria-invalid={errors.dataRetentionConsent ? 'true' : 'false'}
               />
               <Label htmlFor="dataRetentionConsent" className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 I understand and consent to the 90-day data retention policy <span className="text-destructive">*</span>
               </Label>
             </div>
+            {errors.dataRetentionConsent && (
+              <p className="text-sm text-destructive ml-7" role="alert">{errors.dataRetentionConsent}</p>
+            )}
 
             <div className="flex items-start space-x-3">
               <Checkbox
@@ -102,11 +115,15 @@ export function ConsentForm() {
                 onCheckedChange={(checked) => 
                   updateFormData({ treatmentConsent: checked })
                 }
+                aria-invalid={errors.treatmentConsent ? 'true' : 'false'}
               />
               <Label htmlFor="treatmentConsent" className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 I consent to mental health treatment for my child <span className="text-destructive">*</span>
               </Label>
             </div>
+            {errors.treatmentConsent && (
+              <p className="text-sm text-destructive ml-7" role="alert">{errors.treatmentConsent}</p>
+            )}
           </div>
         </div>
 
@@ -123,7 +140,12 @@ export function ConsentForm() {
               signatureDate: new Date(),
             })}
             required
+            aria-invalid={errors.signature ? 'true' : 'false'}
+            className={errors.signature ? 'border-destructive' : ''}
           />
+          {errors.signature && (
+            <p className="text-sm text-destructive" role="alert">{errors.signature}</p>
+          )}
           <p className="text-xs text-muted-foreground">
             By typing your name, you are providing your electronic signature and consent.
           </p>

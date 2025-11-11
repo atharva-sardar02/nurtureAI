@@ -26,6 +26,7 @@ import { transformKinshipData } from '../src/utils/kinshipMapping.js';
 import { transformQuestionnaireData } from '../src/utils/questionnaireMapping.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import admin from 'firebase-admin';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -114,12 +115,64 @@ const IMPORT_CONFIG = [
   {
     file: 'clinician_credentialed_insurances.csv',
     collection: 'clinicianCredentialedInsurances',
-    transform: (row) => row,
+    transform: (row) => {
+      // Skip deleted rows
+      if (row.fivetranDeleted === true || row.fivetranDeleted === 'true' || row._fivetran_deleted === true || row._fivetran_deleted === 'true') {
+        return null;
+      }
+      
+      // Map field names to match what the code expects
+      // CSV has: care_provider_profile_id, credentialed_insurance_id
+      // After camelCase conversion: careProviderProfileId, credentialedInsuranceId
+      // Code expects: careProviderProfileId, insuranceId (or credentialedInsuranceId)
+      return {
+        ...row,
+        // Ensure both field names are available for compatibility
+        insuranceId: row.credentialedInsuranceId || row.credentialed_insurance_id,
+      };
+    },
   },
   {
     file: 'clinician_availabilities.csv',
     collection: 'clinicianAvailabilities',
-    transform: (row) => row,
+    transform: (row) => {
+      // Map field names and convert dates to Firestore Timestamps
+      // CSV has: user_id, range_start, range_end
+      // After camelCase conversion: userId, rangeStart, rangeEnd
+      // Code expects: careProviderProfileId, startTime, endTime
+      const Timestamp = admin.firestore.Timestamp;
+      
+      const transformed = {
+        ...row,
+        // Don't set careProviderProfileId here - it will be set by the ID map transform
+        // This prevents undefined values
+      };
+      
+      // Convert rangeStart to startTime (Firestore Timestamp)
+      if (row.rangeStart) {
+        const startDate = new Date(row.rangeStart);
+        if (!isNaN(startDate.getTime())) {
+          transformed.startTime = Timestamp.fromDate(startDate);
+        }
+      }
+      
+      // Convert rangeEnd to endTime (Firestore Timestamp)
+      if (row.rangeEnd) {
+        const endDate = new Date(row.rangeEnd);
+        if (!isNaN(endDate.getTime())) {
+          transformed.endTime = Timestamp.fromDate(endDate);
+        }
+      }
+      
+      // Ensure isBooked field exists (default to false)
+      if (transformed.isBooked === undefined && transformed.is_booked === undefined) {
+        transformed.isBooked = false;
+      } else if (transformed.is_booked !== undefined) {
+        transformed.isBooked = transformed.is_booked === true || transformed.is_booked === 'true';
+      }
+      
+      return transformed;
+    },
   },
   {
     file: 'documents.csv',
@@ -198,6 +251,25 @@ const IMPORT_CONFIG = [
 ];
 
 /**
+ * Build a map of healthie_id to clinician UUID
+ */
+async function buildClinicianIdMap() {
+  const db = admin.firestore();
+  const cliniciansSnapshot = await db.collection('clinicians').get();
+  const idMap = new Map();
+  
+  cliniciansSnapshot.forEach((doc) => {
+    const data = doc.data();
+    const healthieId = data.healthieId || data.healthie_id;
+    if (healthieId) {
+      idMap.set(String(healthieId), doc.id);
+    }
+  });
+  
+  return idMap;
+}
+
+/**
  * Main seeding function
  */
 async function seedDatabase(options = {}) {
@@ -211,8 +283,82 @@ async function seedDatabase(options = {}) {
   let totalImported = 0;
   let totalErrors = 0;
   let totalSkipped = 0;
+  
+  // Build clinician ID map after clinicians are imported
+  let clinicianIdMap = new Map();
 
   for (const config of IMPORT_CONFIG) {
+    // After clinicians are imported, build the ID map for availability mapping
+    if (config.collection === 'clinicians' && !dryRun) {
+      // Wait a moment for the import to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      clinicianIdMap = await buildClinicianIdMap();
+      console.log(`📋 Built clinician ID map: ${clinicianIdMap.size} clinicians\n`);
+    }
+    
+    // Update availability transform to use the ID map
+    if (config.collection === 'clinicianAvailabilities' && clinicianIdMap.size > 0) {
+      const originalTransform = config.transform;
+      config.transform = (row) => {
+        // Map user_id (healthie_id) to clinician UUID FIRST
+        const userId = row.userId || row.user_id;
+        if (!userId) {
+          return { _skip: true };
+        }
+        
+        const clinicianUuid = clinicianIdMap.get(String(userId));
+        if (!clinicianUuid) {
+          // Skip rows where we can't find the clinician
+          return { _skip: true };
+        }
+        
+        // Now call original transform with the mapped ID
+        const transformed = originalTransform(row);
+        transformed.careProviderProfileId = clinicianUuid;
+        return transformed;
+      };
+    }
+    
+    // Update clinician_credentialed_insurances transform to use the ID map
+    if (config.collection === 'clinicianCredentialedInsurances' && clinicianIdMap.size > 0) {
+      const originalTransform = config.transform;
+      config.transform = (row) => {
+        // First check if row should be skipped (deleted, etc.)
+        const preTransformed = originalTransform(row);
+        if (!preTransformed || preTransformed._skip) {
+          return preTransformed;
+        }
+        
+        // Map care_provider_profile_id (which might be healthie_id) to clinician UUID
+        const profileId = row.careProviderProfileId || row.care_provider_profile_id;
+        if (!profileId) {
+          return { _skip: true };
+        }
+        
+        let clinicianUuid = null;
+        // Check if it's already a UUID (contains hyphens)
+        if (profileId.includes('-')) {
+          // Already a UUID, validate it exists in our map (by checking reverse lookup)
+          // Actually, just use it as-is since UUIDs should match
+          clinicianUuid = profileId;
+        } else {
+          // It's a healthie_id, map to UUID
+          clinicianUuid = clinicianIdMap.get(String(profileId));
+          if (!clinicianUuid) {
+            return { _skip: true };
+          }
+        }
+        
+        preTransformed.careProviderProfileId = clinicianUuid;
+        
+        // Ensure insuranceId is set
+        if (!preTransformed.insuranceId && !preTransformed.credentialedInsuranceId) {
+          return { _skip: true };
+        }
+        
+        return preTransformed;
+      };
+    }
     try {
       const csvPath = getCSVPath(config.file);
       const result = await importCSVToFirestore(

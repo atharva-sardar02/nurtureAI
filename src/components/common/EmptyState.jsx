@@ -5,14 +5,13 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LucideIcon } from 'lucide-react';
 
 /**
  * EmptyState Component
  * @param {Object} props
  * @param {string} props.title - Title text
  * @param {string} props.description - Description text
- * @param {LucideIcon} props.icon - Icon component
+ * @param {React.ComponentType} props.icon - Icon component from lucide-react
  * @param {string} props.actionLabel - Optional action button label
  * @param {Function} props.onAction - Optional action button handler
  * @param {string} props.variant - Variant: 'default' | 'minimal' | 'illustrated'

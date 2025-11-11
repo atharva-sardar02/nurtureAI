@@ -23,7 +23,10 @@ export function OnboardingWizard() {
     prevStep, 
     getProgress,
     loading,
-    updateFormData
+    error,
+    formData,
+    updateFormData,
+    validateStep
   } = useOnboarding()
 
   const progress = getProgress()
@@ -31,17 +34,23 @@ export function OnboardingWizard() {
   const totalSteps = Object.keys(ONBOARDING_STEPS).length
 
   const canGoNext = () => {
-    // Add validation logic here if needed
-    return true
+    // Validate current step
+    const validation = validateStep(currentStep)
+    return validation.isValid && !loading
   }
 
   const canGoBack = () => {
-    return stepIndex > 0
+    return stepIndex > 0 && !loading
   }
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (canGoNext()) {
-      nextStep()
+      const result = await nextStep()
+      // Error handling is done in nextStep, which sets the error state
+      if (!result.success && result.errors) {
+        // Validation errors are already set in context
+        console.log('Validation errors:', result.errors)
+      }
     }
   }
 
@@ -64,6 +73,11 @@ export function OnboardingWizard() {
         return <ConsentForm />
       case ONBOARDING_STEPS.INSURANCE:
         return <InsuranceVerification 
+          initialInsuranceData={formData.insuranceProvider || formData.insuranceMemberId || formData.insuranceGroupNumber ? {
+            provider: formData.insuranceProvider || '',
+            memberId: formData.insuranceMemberId || '',
+            groupNumber: formData.insuranceGroupNumber || '',
+          } : null}
           onVerificationComplete={(data) => {
             // Update onboarding form data with verified insurance info
             updateFormData({
@@ -120,6 +134,13 @@ export function OnboardingWizard() {
             </div>
           )}
 
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
+
           {/* Navigation Buttons */}
           {currentStep !== ONBOARDING_STEPS.WELCOME && currentStep !== ONBOARDING_STEPS.REVIEW && (
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6 sm:mt-8">
@@ -135,12 +156,12 @@ export function OnboardingWizard() {
               </Button>
               <Button
                 onClick={handleNext}
-                disabled={loading}
+                disabled={!canGoNext() || loading}
                 className="flex-1 flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[40px] transition-all duration-200"
                 aria-label="Continue to next step"
               >
-                Continue
-                <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                {loading ? 'Saving...' : 'Continue'}
+                {!loading && <ChevronRight className="w-4 h-4" aria-hidden="true" />}
               </Button>
             </div>
           )}

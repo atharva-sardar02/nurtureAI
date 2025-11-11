@@ -31,9 +31,9 @@ export function InsuranceForm({
   loading = false 
 }) {
   const [formData, setFormData] = useState({
-    provider: initialData.provider || '',
-    memberId: initialData.memberId || '',
-    groupNumber: initialData.groupNumber || '',
+    provider: initialData?.provider || '',
+    memberId: initialData?.memberId || '',
+    groupNumber: initialData?.groupNumber || '',
   });
   
   const [providers, setProviders] = useState([]);

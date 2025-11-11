@@ -103,6 +103,20 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "careProviderProfileId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "startTime",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "clinicianAvailabilities",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "isBooked",
           "order": "ASCENDING"
         },

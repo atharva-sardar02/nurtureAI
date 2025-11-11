@@ -10,7 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useOnboarding } from "@/contexts/OnboardingContext"
 
 export function DemographicInfo() {
-  const { formData, updateFormData } = useOnboarding()
+  const { formData, updateFormData, validateStep, ONBOARDING_STEPS } = useOnboarding()
+  
+  // Get validation errors for this step
+  const validation = validateStep(ONBOARDING_STEPS.DEMOGRAPHICS)
+  const errors = validation.errors || {}
 
   return (
     <Card className="border border-border shadow-lg">
@@ -29,7 +33,12 @@ export function DemographicInfo() {
             value={formData.childName}
             onChange={(e) => updateFormData({ childName: e.target.value })}
             required
+            aria-invalid={errors.childName ? 'true' : 'false'}
+            className={errors.childName ? 'border-destructive' : ''}
           />
+          {errors.childName && (
+            <p className="text-sm text-destructive" role="alert">{errors.childName}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -46,7 +55,12 @@ export function DemographicInfo() {
               value={formData.childAge}
               onChange={(e) => updateFormData({ childAge: e.target.value })}
               required
+              aria-invalid={errors.childAge ? 'true' : 'false'}
+              className={errors.childAge ? 'border-destructive' : ''}
             />
+            {errors.childAge && (
+              <p className="text-sm text-destructive" role="alert">{errors.childAge}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="childGender">
@@ -56,7 +70,11 @@ export function DemographicInfo() {
               value={formData.childGender}
               onValueChange={(value) => updateFormData({ childGender: value })}
             >
-              <SelectTrigger id="childGender">
+              <SelectTrigger 
+                id="childGender"
+                aria-invalid={errors.childGender ? 'true' : 'false'}
+                className={errors.childGender ? 'border-destructive' : ''}
+              >
                 <SelectValue placeholder="Select..." />
               </SelectTrigger>
               <SelectContent>
@@ -67,6 +85,9 @@ export function DemographicInfo() {
                 <SelectItem value="prefer-not">Prefer not to say</SelectItem>
               </SelectContent>
             </Select>
+            {errors.childGender && (
+              <p className="text-sm text-destructive" role="alert">{errors.childGender}</p>
+            )}
           </div>
         </div>
 

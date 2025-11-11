@@ -9,7 +9,11 @@ import { Label } from "@/components/ui/label"
 import { useOnboarding } from "@/contexts/OnboardingContext"
 
 export function ContactInfo() {
-  const { formData, updateFormData } = useOnboarding()
+  const { formData, updateFormData, validateStep, ONBOARDING_STEPS } = useOnboarding()
+  
+  // Get validation errors for this step
+  const validation = validateStep(ONBOARDING_STEPS.CONTACT)
+  const errors = validation.errors || {}
 
   const handleAddressChange = (field, value) => {
     updateFormData({
@@ -37,7 +41,12 @@ export function ContactInfo() {
             value={formData.parentName}
             onChange={(e) => updateFormData({ parentName: e.target.value })}
             required
+            aria-invalid={errors.parentName ? 'true' : 'false'}
+            className={errors.parentName ? 'border-destructive' : ''}
           />
+          {errors.parentName && (
+            <p className="text-sm text-destructive" role="alert">{errors.parentName}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -51,7 +60,12 @@ export function ContactInfo() {
             value={formData.parentEmail}
             onChange={(e) => updateFormData({ parentEmail: e.target.value })}
             required
+            aria-invalid={errors.parentEmail ? 'true' : 'false'}
+            className={errors.parentEmail ? 'border-destructive' : ''}
           />
+          {errors.parentEmail && (
+            <p className="text-sm text-destructive" role="alert">{errors.parentEmail}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -65,7 +79,12 @@ export function ContactInfo() {
             value={formData.parentPhone}
             onChange={(e) => updateFormData({ parentPhone: e.target.value })}
             required
+            aria-invalid={errors.parentPhone ? 'true' : 'false'}
+            className={errors.parentPhone ? 'border-destructive' : ''}
           />
+          {errors.parentPhone && (
+            <p className="text-sm text-destructive" role="alert">{errors.parentPhone}</p>
+          )}
         </div>
 
         <div className="space-y-4">

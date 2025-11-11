@@ -3,12 +3,13 @@
  * Manages onboarding form state and persistence
  */
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { 
   createOnboardingApplication, 
   updateOnboardingApplication,
   getOnboardingApplication,
+  getUserConversations,
 } from '@/services/firebase/firestore';
 
 const OnboardingContext = createContext(null);
@@ -84,6 +85,42 @@ export function OnboardingProvider({ children }) {
   });
 
   /**
+   * Determine current step based on filled data
+   */
+  const determineStepFromData = useCallback((app) => {
+    // If status is complete, go to review
+    if (app.status === ONBOARDING_STATUS.COMPLETE) {
+      return ONBOARDING_STEPS.REVIEW;
+    }
+    
+    // Check what data is filled to determine step
+    const demo = app.demographicData;
+    const hasDemographics = demo && demo.childName && demo.childAge && demo.childGender;
+    const hasContact = demo && demo.parentName && demo.parentEmail && demo.parentPhone;
+    const hasConsent = app.kinship && app.dataRetentionConsent && app.treatmentConsent && app.signature;
+    const hasInsurance = app.insuranceData && (app.insuranceData.provider || app.insuranceData.memberId);
+    
+    // If no data at all, start at welcome
+    if (!hasDemographics && !hasContact && !hasConsent && !hasInsurance) {
+      return ONBOARDING_STEPS.WELCOME;
+    }
+    
+    // Determine step based on what's completed
+    if (!hasDemographics) {
+      return ONBOARDING_STEPS.DEMOGRAPHICS;
+    } else if (!hasContact) {
+      return ONBOARDING_STEPS.CONTACT;
+    } else if (!hasConsent) {
+      return ONBOARDING_STEPS.CONSENT;
+    } else if (!hasInsurance) {
+      return ONBOARDING_STEPS.INSURANCE;
+    } else {
+      // All required data filled, go to review
+      return ONBOARDING_STEPS.REVIEW;
+    }
+  }, []);
+
+  /**
    * Load existing onboarding application from Firestore
    */
   const loadApplication = useCallback(async () => {
@@ -106,16 +143,45 @@ export function OnboardingProvider({ children }) {
             guardianProof: app.guardianProof || null,
             insuranceData: app.insuranceData || {},
             referralInfo: app.referralInfo || null,
+            // Restore consent data
+            dataRetentionConsent: app.dataRetentionConsent || false,
+            treatmentConsent: app.treatmentConsent || false,
+            signature: app.signature || '',
+            signatureDate: app.signatureDate || null,
           }));
         }
         
-        // Determine current step based on status
-        if (app.status === ONBOARDING_STATUS.COMPLETE) {
-          setCurrentStep(ONBOARDING_STEPS.REVIEW);
-        } else if (app.status === ONBOARDING_STATUS.INSURANCE_SUBMITTED) {
-          setCurrentStep(ONBOARDING_STEPS.REVIEW);
-        } else if (app.status === ONBOARDING_STATUS.ASSESSMENT_COMPLETE) {
-          setCurrentStep(ONBOARDING_STEPS.DEMOGRAPHICS);
+        // If status is not assessment_complete but user has completed assessment, update it
+        // This handles the case where user completes assessment then accesses onboarding
+        if (app.status !== ONBOARDING_STATUS.ASSESSMENT_COMPLETE && 
+            app.status !== ONBOARDING_STATUS.INSURANCE_SUBMITTED && 
+            app.status !== ONBOARDING_STATUS.SCHEDULED && 
+            app.status !== ONBOARDING_STATUS.COMPLETE) {
+          // Check if assessment is complete by checking for conversation with assessmentData
+          try {
+            const convResult = await getUserConversations(user.uid, 1);
+            if (convResult.success && convResult.conversations && convResult.conversations.length > 0) {
+              const latestConversation = convResult.conversations[0];
+              if (latestConversation.assessmentData) {
+                // Update status to assessment_complete
+                await updateOnboardingApplication(app.id, {
+                  status: ONBOARDING_STATUS.ASSESSMENT_COMPLETE,
+                });
+              }
+            }
+          } catch (err) {
+            console.error('Error checking assessment status:', err);
+            // Continue anyway - don't block onboarding
+          }
+        }
+        
+        // Restore current step - first check if stored, otherwise determine from data
+        if (app.currentStep && Object.values(ONBOARDING_STEPS).includes(app.currentStep)) {
+          setCurrentStep(app.currentStep);
+        } else {
+          // Determine current step based on what data is filled
+          const determinedStep = determineStepFromData(app);
+          setCurrentStep(determinedStep);
         }
       }
     } catch (err) {
@@ -124,20 +190,20 @@ export function OnboardingProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, determineStepFromData]);
 
   /**
    * Auto-save form data to Firestore
    */
   const autoSave = useCallback(async (currentFormData) => {
-    if (!user) return;
+    if (!user) return { success: false, error: 'No user' };
 
     try {
       const dataToSave = currentFormData || formData;
 
       if (applicationId) {
         // Update existing application
-        await updateOnboardingApplication(applicationId, {
+        const result = await updateOnboardingApplication(applicationId, {
           demographicData: {
             childName: dataToSave.childName,
             childAge: dataToSave.childAge,
@@ -156,7 +222,15 @@ export function OnboardingProvider({ children }) {
             groupNumber: dataToSave.insuranceGroupNumber,
           },
           referralInfo: dataToSave.referralInfo,
+          // Include consent data in auto-save
+          dataRetentionConsent: dataToSave.dataRetentionConsent,
+          treatmentConsent: dataToSave.treatmentConsent,
+          signature: dataToSave.signature,
+          signatureDate: dataToSave.signatureDate,
+          // Store current step for restoration
+          currentStep: currentStep,
         });
+        return result;
       } else {
         // Create new application
         const result = await createOnboardingApplication(user.uid, {
@@ -178,32 +252,60 @@ export function OnboardingProvider({ children }) {
             groupNumber: dataToSave.insuranceGroupNumber,
           },
           referralInfo: dataToSave.referralInfo,
+          // Include consent data in auto-save
+          dataRetentionConsent: dataToSave.dataRetentionConsent,
+          treatmentConsent: dataToSave.treatmentConsent,
+          signature: dataToSave.signature,
+          signatureDate: dataToSave.signatureDate,
+          // Store current step for restoration
+          currentStep: currentStep,
           status: ONBOARDING_STATUS.STARTED,
         });
         
         if (result.success) {
           setApplicationId(result.applicationId);
         }
+        return result;
       }
     } catch (err) {
       console.error('Error auto-saving:', err);
-      // Don't show error to user for auto-save failures
+      return { success: false, error: err.message };
     }
-  }, [user, applicationId, formData]);
+  }, [user, applicationId, formData, currentStep]);
+
+  // Debounce timer ref
+  const debounceTimerRef = useRef(null);
 
   /**
-   * Update form data and auto-save
+   * Update form data and auto-save (debounced)
    */
   const updateFormData = useCallback((updates) => {
     setFormData(prev => {
       const newData = { ...prev, ...updates };
+      
+      // Clear existing debounce timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      
       // Debounce auto-save (will be called after user stops typing)
-      setTimeout(() => {
+      debounceTimerRef.current = setTimeout(() => {
         autoSave(newData);
+        debounceTimerRef.current = null;
       }, 1000);
+      
       return newData;
     });
   }, [autoSave]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   /**
    * Submit onboarding application
@@ -248,15 +350,129 @@ export function OnboardingProvider({ children }) {
   }, [currentStep]);
 
   /**
-   * Navigate to next step
+   * Save current step data before transitioning
    */
-  const nextStep = useCallback(() => {
+  const saveCurrentStep = useCallback(async () => {
+    if (!user) return { success: false, error: 'No user' };
+
+    try {
+      // Cancel any pending debounced saves
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+
+      // Save immediately
+      setLoading(true);
+      const result = await autoSave(formData);
+      setLoading(false);
+      return result;
+    } catch (err) {
+      console.error('Error saving current step:', err);
+      setLoading(false);
+      return { success: false, error: err.message };
+    }
+  }, [user, formData, autoSave]);
+
+  /**
+   * Validate current step
+   */
+  const validateStep = useCallback((step) => {
+    const errors = {};
+
+    switch (step) {
+      case ONBOARDING_STEPS.DEMOGRAPHICS:
+        if (!formData.childName?.trim()) {
+          errors.childName = 'Child\'s name is required';
+        }
+        if (!formData.childAge || formData.childAge === '') {
+          errors.childAge = 'Child\'s age is required';
+        }
+        if (!formData.childGender) {
+          errors.childGender = 'Gender is required';
+        }
+        break;
+
+      case ONBOARDING_STEPS.CONTACT:
+        if (!formData.parentName?.trim()) {
+          errors.parentName = 'Your name is required';
+        }
+        if (!formData.parentEmail?.trim()) {
+          errors.parentEmail = 'Email address is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.parentEmail)) {
+          errors.parentEmail = 'Please enter a valid email address';
+        }
+        if (!formData.parentPhone?.trim()) {
+          errors.parentPhone = 'Phone number is required';
+        }
+        break;
+
+      case ONBOARDING_STEPS.CONSENT:
+      case ONBOARDING_STEPS.KINSHIP:
+        if (!formData.kinship) {
+          errors.kinship = 'Relationship to child is required';
+        }
+        if (!formData.dataRetentionConsent) {
+          errors.dataRetentionConsent = 'Data retention consent is required';
+        }
+        if (!formData.treatmentConsent) {
+          errors.treatmentConsent = 'Treatment consent is required';
+        }
+        if (!formData.signature?.trim()) {
+          errors.signature = 'Electronic signature is required';
+        }
+        break;
+
+      default:
+        // Other steps are optional or don't require validation
+        break;
+    }
+
+    return {
+      isValid: Object.keys(errors).length === 0,
+      errors,
+    };
+  }, [formData]);
+
+  /**
+   * Navigate to next step (with save and validation)
+   */
+  const nextStep = useCallback(async () => {
     const steps = Object.values(ONBOARDING_STEPS);
     const currentIndex = steps.indexOf(currentStep);
+    
     if (currentIndex < steps.length - 1) {
-      setCurrentStep(steps[currentIndex + 1]);
+      // Validate current step before proceeding
+      const validation = validateStep(currentStep);
+      if (!validation.isValid) {
+        setError('Please complete all required fields before continuing.');
+        return { success: false, errors: validation.errors };
+      }
+
+      // Save current step data before transitioning
+      const saveResult = await saveCurrentStep();
+      if (!saveResult.success) {
+        setError(saveResult.error || 'Failed to save data. Please try again.');
+        return { success: false, error: saveResult.error };
+      }
+
+      // Proceed to next step
+      const nextStepValue = steps[currentIndex + 1];
+      setCurrentStep(nextStepValue);
+      
+      // Save the new current step to Firestore
+      if (applicationId) {
+        await updateOnboardingApplication(applicationId, {
+          currentStep: nextStepValue,
+        });
+      }
+      
+      setError(null); // Clear any previous errors
+      return { success: true };
     }
-  }, [currentStep]);
+    
+    return { success: false, error: 'Already on last step' };
+  }, [currentStep, validateStep, saveCurrentStep, applicationId]);
 
   /**
    * Navigate to previous step
@@ -294,6 +510,8 @@ export function OnboardingProvider({ children }) {
     submitApplication,
     getProgress,
     autoSave,
+    saveCurrentStep,
+    validateStep,
     
     // Constants
     ONBOARDING_STEPS,

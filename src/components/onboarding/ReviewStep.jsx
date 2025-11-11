@@ -3,11 +3,13 @@
  * Displays all entered information for review before submission
  */
 
+import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useOnboarding } from "@/contexts/OnboardingContext"
 
 export function ReviewStep() {
+  const navigate = useNavigate()
   const { formData, submitApplication, loading } = useOnboarding()
 
   const formatKinshipLabel = (label) => {
@@ -21,8 +23,8 @@ export function ReviewStep() {
   const handleSubmit = async () => {
     const result = await submitApplication()
     if (result.success) {
-      // Navigate to success page or next step
-      console.log('Application submitted successfully')
+      // Navigate to scheduling page to book first appointment
+      navigate('/scheduling')
     }
   }
 

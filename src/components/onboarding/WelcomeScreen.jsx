@@ -14,10 +14,11 @@ import { getOnboardingApplication } from "@/services/firebase/firestore"
 import { getPatientReferral } from "@/services/referrals/ReferralTracker"
 
 export function WelcomeScreen() {
-  const { nextStep, formData, applicationId, updateFormData } = useOnboarding()
+  const { nextStep, formData, applicationId, updateFormData, autoSave, loading } = useOnboarding()
   const { user } = useAuth()
   const [referral, setReferral] = useState(null)
   const [loadingReferral, setLoadingReferral] = useState(true)
+  const [isStarting, setIsStarting] = useState(false)
 
   useEffect(() => {
     async function loadReferral() {
@@ -115,8 +116,25 @@ export function WelcomeScreen() {
             </li>
           </ul>
         </div>
-        <Button onClick={nextStep} className="w-full">
-          Get Started
+        <Button 
+          onClick={async () => {
+            setIsStarting(true)
+            try {
+              // Create application if it doesn't exist
+              if (!applicationId) {
+                await autoSave(formData)
+              }
+              await nextStep()
+            } catch (error) {
+              console.error('Error starting onboarding:', error)
+            } finally {
+              setIsStarting(false)
+            }
+          }}
+          disabled={loading || isStarting}
+          className="w-full"
+        >
+          {isStarting || loading ? 'Starting...' : 'Get Started'}
         </Button>
       </CardContent>
     </Card>

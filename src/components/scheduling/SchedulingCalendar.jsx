@@ -154,6 +154,25 @@ export function SchedulingCalendar() {
           )}
         </div>
 
+        {/* Instructions */}
+        {!selectedClinician && clinicians.length > 0 && (
+          <Card className="mb-8 border-primary/20 bg-primary/5">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <Calendar className="w-5 h-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-semibold mb-1">How to Schedule</p>
+                  <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+                    <li>Select a clinician from the list above</li>
+                    <li>Choose an available time slot</li>
+                    <li>Click "Confirm Appointment" to book</li>
+                  </ol>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Time Slot Selection */}
         {selectedClinician && (
           <div className="mb-8">
@@ -163,6 +182,15 @@ export function SchedulingCalendar() {
               onSelectSlot={selectSlot}
               loading={loading}
             />
+            {!selectedSlot && availableSlots.length > 0 && (
+              <Card className="mt-4 border-primary/20 bg-primary/5">
+                <CardContent className="pt-6">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Next step:</strong> Select a time slot above to continue booking your appointment.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 

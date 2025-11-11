@@ -10,7 +10,8 @@ import { Footer } from "@/components/common/Footer"
 import { AssessmentSummary } from "@/components/assessment/AssessmentSummary"
 import { LoadingSpinner } from "@/components/common/LoadingSpinner"
 import { useAuth } from "@/contexts/AuthContext"
-import { getUserConversations } from "@/services/firebase/firestore"
+import { getUserConversations, getOnboardingApplication, createOnboardingApplication, updateOnboardingApplication } from "@/services/firebase/firestore"
+import { ONBOARDING_STATUS } from "@/contexts/OnboardingContext"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -56,7 +57,34 @@ export function AssessmentPage() {
     loadAssessmentData()
   }, [user])
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    // Ensure onboarding application exists with assessment_complete status
+    if (user && assessmentData) {
+      try {
+        const appResult = await getOnboardingApplication(user.uid);
+        
+        if (appResult.success && appResult.data) {
+          // Update existing application to assessment_complete if not already
+          if (appResult.data.status !== ONBOARDING_STATUS.ASSESSMENT_COMPLETE &&
+              appResult.data.status !== ONBOARDING_STATUS.INSURANCE_SUBMITTED &&
+              appResult.data.status !== ONBOARDING_STATUS.SCHEDULED &&
+              appResult.data.status !== ONBOARDING_STATUS.COMPLETE) {
+            await updateOnboardingApplication(appResult.data.id, {
+              status: ONBOARDING_STATUS.ASSESSMENT_COMPLETE,
+            });
+          }
+        } else {
+          // Create new onboarding application with assessment_complete status
+          await createOnboardingApplication(user.uid, {
+            status: ONBOARDING_STATUS.ASSESSMENT_COMPLETE,
+          });
+        }
+      } catch (error) {
+        console.error('Error updating onboarding application status:', error);
+        // Continue anyway - don't block navigation
+      }
+    }
+    
     navigate("/onboarding")
   }
 

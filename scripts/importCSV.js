@@ -132,6 +132,13 @@ export async function importCSVToFirestore(
           skipped++;
           continue;
         }
+        
+        // Skip rows marked with _skip flag
+        if (transformed._skip) {
+          skipped++;
+          delete transformed._skip; // Clean up
+          continue;
+        }
 
         const docId = transformed[idField] || transformed.id || null;
         

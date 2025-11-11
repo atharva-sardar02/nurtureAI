@@ -6,7 +6,6 @@
 import { Component } from "react"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, RefreshCw, Home } from "lucide-react"
-import { useNavigate } from "react-router-dom"
 
 class ErrorBoundaryClass extends Component {
   constructor(props) {
@@ -49,7 +48,10 @@ class ErrorBoundaryClass extends Component {
  * Error Fallback UI Component
  */
 function ErrorFallback({ error, errorInfo, onReset }) {
-  const navigate = useNavigate()
+  const handleGoHome = () => {
+    // Use window.location instead of navigate to avoid Router context issues
+    window.location.href = "/";
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -86,7 +88,7 @@ function ErrorFallback({ error, errorInfo, onReset }) {
               Try Again
             </Button>
             <Button
-              onClick={() => navigate("/")}
+              onClick={handleGoHome}
               variant="outline"
               className="flex items-center gap-2"
             >

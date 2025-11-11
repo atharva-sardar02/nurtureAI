@@ -16,6 +16,7 @@ export function useChat() {
   const [crisisDetected, setCrisisDetected] = useState(false)
   const [assessmentData, setAssessmentData] = useState(null)
   const engineRef = useRef(null)
+  const savedConversationRef = useRef(false) // Track if conversation has been saved
 
   // Initialize assessment engine
   useEffect(() => {
@@ -105,6 +106,47 @@ export function useChat() {
           if (result.assessmentData.crisisDetected) {
             setCrisisDetected(true)
           }
+          
+          // Auto-save conversation if:
+          // 1. We have at least 3 user messages (enough for assessment)
+          // 2. Assessment suitability is determined
+          // 3. Conversation hasn't been saved yet
+          const updatedMessages = [...messages, userMsg]
+          if (!options.stream) {
+            updatedMessages.push({
+              id: (Date.now() + 1).toString(),
+              role: "assistant",
+              content: result.message,
+              timestamp: new Date(),
+            })
+          }
+          const userMessageCount = updatedMessages.filter(m => m.role === "user").length
+          // Auto-save if we have 3+ user messages OR if suitability is determined
+          const shouldAutoSave = 
+            !savedConversationRef.current && 
+            user && 
+            (userMessageCount >= 3 || result.assessmentData.suitability === "suitable" || result.assessmentData.suitability === "not_suitable")
+          
+          if (shouldAutoSave && user) {
+            // Save conversation asynchronously (don't block UI)
+            setTimeout(async () => {
+              try {
+                const assessmentSummary = engineRef.current.getAssessmentSummary()
+                const saveResult = await saveConversation(
+                  user.uid,
+                  updatedMessages,
+                  assessmentSummary,
+                  null
+                )
+                if (saveResult.success) {
+                  savedConversationRef.current = true
+                  console.log('✅ Conversation auto-saved:', saveResult.conversationId)
+                }
+              } catch (err) {
+                console.error('Error auto-saving conversation:', err)
+              }
+            }, 1500) // Small delay to ensure state is updated
+          }
         }
       } catch (err) {
         console.error("Chat error:", err)
@@ -139,6 +181,7 @@ export function useChat() {
     setCrisisDetected(false)
     setAssessmentData(null)
     setIsLoading(false)
+    savedConversationRef.current = false
   }, [])
 
   /**
@@ -168,10 +211,35 @@ export function useChat() {
         onboardingApplicationId
       )
 
+      if (result.success) {
+        savedConversationRef.current = true
+      }
+
       return result
     },
     [user, messages]
   )
+
+  // Auto-save conversation when component unmounts or user navigates away
+  useEffect(() => {
+    return () => {
+      // Save conversation on unmount if not already saved and we have enough messages
+      if (!savedConversationRef.current && user && engineRef.current && messages.length > 2) {
+        const userMessageCount = messages.filter(m => m.role === "user").length
+        if (userMessageCount >= 2) {
+          const assessmentSummary = engineRef.current.getAssessmentSummary()
+          saveConversation(
+            user.uid,
+            messages,
+            assessmentSummary,
+            null
+          ).catch(err => {
+            console.error('Error saving conversation on unmount:', err)
+          })
+        }
+      }
+    }
+  }, [user, messages])
 
   return {
     messages,
