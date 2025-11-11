@@ -18,12 +18,14 @@ import { AlertCircle, Loader2 } from "lucide-react"
  * InsuranceForm Component
  * @param {Object} props
  * @param {Object} props.initialData - Initial form data
+ * @param {Object} props.ocrData - OCR extracted data to auto-populate
  * @param {Function} props.onSubmit - Callback when form is submitted
  * @param {Function} props.onChange - Callback when form data changes
  * @param {boolean} props.loading - Loading state
  */
 export function InsuranceForm({ 
   initialData = {}, 
+  ocrData = null,
   onSubmit, 
   onChange,
   loading = false 
@@ -42,6 +44,19 @@ export function InsuranceForm({
   useEffect(() => {
     loadProviders();
   }, []);
+
+  // Auto-populate from OCR data
+  useEffect(() => {
+    if (ocrData) {
+      setFormData(prev => ({
+        ...prev,
+        memberId: ocrData.memberId || prev.memberId,
+        groupNumber: ocrData.groupNumber || prev.groupNumber,
+        // Provider will be matched from OCR provider name
+        provider: ocrData.providerId || prev.provider,
+      }));
+    }
+  }, [ocrData]);
 
   // Notify parent of changes
   useEffect(() => {
@@ -155,7 +170,14 @@ export function InsuranceForm({
 
           {/* Group Number */}
           <div className="space-y-2">
-            <Label htmlFor="groupNumber">Group Number (Optional)</Label>
+            <Label htmlFor="groupNumber">
+              Group Number (Optional)
+              {ocrData?.groupNumber && (
+                <span className="text-xs text-muted-foreground ml-2">
+                  (from OCR)
+                </span>
+              )}
+            </Label>
             <Input
               id="groupNumber"
               placeholder="Enter group number if applicable"

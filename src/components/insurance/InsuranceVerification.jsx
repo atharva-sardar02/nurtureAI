@@ -5,14 +5,17 @@
 
 import { useState } from "react"
 import { InsuranceForm } from "./InsuranceForm"
+import { InsuranceCardUpload } from "./InsuranceCardUpload"
 import { CoverageDisplay } from "./CoverageDisplay"
+import { CostEstimator } from "./CostEstimator"
 import { NetworkStatus } from "./NetworkStatus"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { lookupInsurancePlan, checkCoverageStatus } from "@/services/insurance/InsuranceValidator"
-import { getInsuranceProviderName } from "@/services/insurance/InsuranceMatcher"
-import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
+import { getInsuranceProviderName, matchProviderNameToId } from "@/services/insurance/InsuranceMatcher"
+import { CheckCircle2, AlertCircle, Loader2, Upload, FileText } from "lucide-react"
 
 /**
  * InsuranceVerification Component
@@ -30,6 +33,8 @@ export function InsuranceVerification({
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(null);
   const [verified, setVerified] = useState(false);
+  const [ocrData, setOcrData] = useState(null);
+  const [activeTab, setActiveTab] = useState("manual");
 
   const handleFormChange = (formData) => {
     setInsuranceData(formData);
@@ -98,15 +103,68 @@ export function InsuranceVerification({
     await handleFormSubmit(insuranceData);
   };
 
+  const handleOCRComplete = async (data) => {
+    setOcrData(data);
+    
+    // Try to match provider name to provider ID
+    let providerId = null;
+    if (data.provider) {
+      providerId = await matchProviderNameToId(data.provider);
+    }
+    
+    setInsuranceData(prev => ({
+      ...prev,
+      memberId: data.memberId || prev?.memberId,
+      groupNumber: data.groupNumber || prev?.groupNumber,
+      provider: providerId || prev?.provider,
+    }));
+  };
+
   return (
     <div className="space-y-6">
-      {/* Insurance Form */}
-      <InsuranceForm
-        initialData={insuranceData}
-        onSubmit={handleFormSubmit}
-        onChange={handleFormChange}
-        loading={verifying}
-      />
+      {/* Tab Selection: OCR Upload vs Manual Entry */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="manual" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Manual Entry
+          </TabsTrigger>
+          <TabsTrigger value="upload" className="flex items-center gap-2">
+            <Upload className="w-4 h-4" />
+            Upload Card
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="manual" className="space-y-6">
+          {/* Insurance Form */}
+          <InsuranceForm
+            initialData={insuranceData}
+            ocrData={ocrData}
+            onSubmit={handleFormSubmit}
+            onChange={handleFormChange}
+            loading={verifying}
+          />
+        </TabsContent>
+
+        <TabsContent value="upload" className="space-y-6">
+          {/* Insurance Card Upload */}
+          <InsuranceCardUpload
+            onOCRComplete={handleOCRComplete}
+            onError={(err) => setError(err.message)}
+          />
+          
+          {/* Show form after OCR for editing */}
+          {ocrData && (
+            <InsuranceForm
+              initialData={insuranceData}
+              ocrData={ocrData}
+              onSubmit={handleFormSubmit}
+              onChange={handleFormChange}
+              loading={verifying}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Verification Status */}
       {verifying && (
@@ -152,6 +210,9 @@ export function InsuranceVerification({
             inNetwork={true} // This would be determined by clinician matching
             insuranceProvider={insuranceProviderName}
           />
+
+          {/* Cost Estimator */}
+          <CostEstimator coverage={coverage} />
         </div>
       )}
     </div>

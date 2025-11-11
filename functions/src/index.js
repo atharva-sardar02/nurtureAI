@@ -3,9 +3,14 @@ const admin = require('firebase-admin');
 
 admin.initializeApp();
 
+// Import function modules
+const { processInsuranceCard } = require('./processInsuranceCard');
+
+// Export functions
+exports.processInsuranceCard = processInsuranceCard.processInsuranceCard;
+
 // Placeholder for future Cloud Functions
-// Functions will be added in later PRs:
-// - processInsuranceCard (OCR)
+// Functions to be added in later PRs:
 // - calculateCostEstimate
 // - sendAppointmentReminder
 // - generateEmbeddings

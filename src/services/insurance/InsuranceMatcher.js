@@ -162,6 +162,75 @@ export async function getAllInsuranceProviders() {
   }
 }
 
+/**
+ * Match OCR extracted provider name to insurance provider ID
+ * @param {string} providerName - Provider name from OCR (e.g., "AETNA", "UNITED HEALTHCARE")
+ * @returns {Promise<string|null>} Insurance provider ID or null if not found
+ */
+export async function matchProviderNameToId(providerName) {
+  try {
+    if (!providerName) {
+      return null;
+    }
+
+    const insuranceQuery = query(collection(db, 'credentialedInsurances'));
+    const snapshot = await getDocs(insuranceQuery);
+    
+    const normalizedOCRName = providerName.toUpperCase().trim();
+    
+    // Try exact match first
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      const insuranceName = (data.name || data.provider || data.insuranceName || '').toUpperCase();
+      
+      if (insuranceName === normalizedOCRName) {
+        return doc.id;
+      }
+    }
+    
+    // Try partial match (contains)
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      const insuranceName = (data.name || data.provider || data.insuranceName || '').toUpperCase();
+      
+      // Check if OCR name contains insurance name or vice versa
+      if (normalizedOCRName.includes(insuranceName) || insuranceName.includes(normalizedOCRName)) {
+        return doc.id;
+      }
+    }
+    
+    // Try fuzzy matching for common variations
+    const commonMappings = {
+      'AETNA': ['AETNA'],
+      'UNITED HEALTHCARE': ['UNITED HEALTHCARE', 'UNITEDHEALTHCARE', 'UHC'],
+      'BLUE CROSS': ['BLUE CROSS', 'BLUE CROSS BLUE SHIELD', 'BCBS'],
+      'CIGNA': ['CIGNA'],
+      'ANTHEM': ['ANTHEM', 'ANTHEM BLUE CROSS'],
+      'MOLINA': ['MOLINA'],
+      'MEDICARE': ['MEDICARE'],
+      'MEDICAID': ['MEDICAID'],
+    };
+    
+    for (const [key, variations] of Object.entries(commonMappings)) {
+      if (variations.some(v => normalizedOCRName.includes(v))) {
+        // Find matching insurance in database
+        for (const doc of snapshot.docs) {
+          const data = doc.data();
+          const insuranceName = (data.name || data.provider || data.insuranceName || '').toUpperCase();
+          if (variations.some(v => insuranceName.includes(v))) {
+            return doc.id;
+          }
+        }
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error matching provider name to ID:', error);
+    return null;
+  }
+}
+
 export default {
   clinicianAcceptsInsurance,
   getClinicianAcceptedInsurances,
@@ -169,5 +238,6 @@ export default {
   filterCliniciansByInsurance,
   getInsuranceProviderName,
   getAllInsuranceProviders,
+  matchProviderNameToId,
 };
 
