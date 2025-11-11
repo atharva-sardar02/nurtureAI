@@ -10,16 +10,14 @@ import { Send, Loader2 } from "lucide-react"
 import { MessageBubble } from "./MessageBubble"
 import { CrisisDetection } from "./CrisisDetection"
 import { useChat } from "@/hooks/useChat"
-import { cn } from "@/lib/utils"
 
-export function ChatInterface({ onAssessmentComplete }) {
+export function ChatInterface() {
   const {
     messages,
     isLoading,
     error,
     crisisDetected,
     sendMessage,
-    getAssessmentSummary,
   } = useChat()
   const [input, setInput] = useState("")
   const [showCrisisAlert, setShowCrisisAlert] = useState(false)
@@ -78,7 +76,7 @@ export function ChatInterface({ onAssessmentComplete }) {
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
             <p className="text-muted-foreground text-sm sm:text-base">
-              Start a conversation by typing a message below. I'm here to help you understand your child's mental health needs.
+              Start a conversation by typing a message below. I&apos;m here to help you understand your child&apos;s mental health needs.
             </p>
           </div>
         ) : (

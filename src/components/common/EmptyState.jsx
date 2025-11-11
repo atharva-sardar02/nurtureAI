@@ -3,7 +3,7 @@
  * Reusable empty state with icon, message, and optional action
  */
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 /**

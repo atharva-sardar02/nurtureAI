@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle, AlertTriangle, ArrowRight, FileText } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import PropTypes from "prop-types"
 
 export function AssessmentSummary({ assessmentData, onContinue }) {
   const navigate = useNavigate()
@@ -29,7 +30,7 @@ export function AssessmentSummary({ assessmentData, onContinue }) {
             Assessment Summary
           </CardTitle>
           <CardDescription>
-            Based on our conversation, here's what we've learned
+            Based on our conversation, here&apos;s what we&apos;ve learned
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -62,7 +63,7 @@ export function AssessmentSummary({ assessmentData, onContinue }) {
                   <p className="text-sm text-muted-foreground">
                     {assessmentData.suitability === "suitable"
                       ? "Based on our conversation, it seems like mental health services could be beneficial for your child. Continue to complete the onboarding process."
-                      : "Based on our conversation, there may be other resources that are a better fit. However, you can still continue with onboarding if you'd like."}
+                      : "Based on our conversation, there may be other resources that are a better fit. However, you can still continue with onboarding if you&apos;d like."}
                   </p>
                 </div>
               </div>
@@ -101,5 +102,14 @@ export function AssessmentSummary({ assessmentData, onContinue }) {
       </Card>
     </div>
   )
+}
+
+AssessmentSummary.propTypes = {
+  assessmentData: PropTypes.shape({
+    suitability: PropTypes.string,
+    concerns: PropTypes.arrayOf(PropTypes.string),
+    messageCount: PropTypes.number,
+  }),
+  onContinue: PropTypes.func,
 }
 
