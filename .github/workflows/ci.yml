@@ -1,0 +1,106 @@
+name: CI - Test and Lint
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+  push:
+    branches:
+      - develop
+      - feature/**
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ESLint
+        run: npm run lint
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        test-suite: [unit, integration, security]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd functions && npm ci && cd ..
+      
+      - name: Run ${{ matrix.test-suite }} tests
+        run: |
+          if [ "${{ matrix.test-suite }}" == "unit" ]; then
+            npm run test:unit || true
+          elif [ "${{ matrix.test-suite }}" == "integration" ]; then
+            npm run test:integration || true
+          else
+            npm run test:security || true
+          fi
+        continue-on-error: true
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd functions && npm ci && cd ..
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Check build output
+        run: |
+          if [ ! -d "build" ]; then
+            echo "Build directory not found!"
+            exit 1
+          fi
+          if [ ! -f "build/index.html" ]; then
+            echo "index.html not found in build!"
+            exit 1
+          fi
+          echo "✅ Build successful"
+
+

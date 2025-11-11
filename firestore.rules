@@ -61,7 +61,7 @@ service cloud.firestore {
     // Insurance coverages - guardian access only
     match /insuranceCoverages/{coverageId} {
       allow read, write: if isAuthenticated() && 
-                          get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians contains request.auth.uid;
+                          request.auth.uid in get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians;
     }
     
     // Clinician availabilities - read by authenticated users (for scheduling)

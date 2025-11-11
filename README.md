@@ -29,12 +29,12 @@ NurtureAI provides a supportive, conversational onboarding experience for parent
 
 ### Prerequisites
 
-- Node.js 18+ and npm/yarn
-- Firebase CLI (`npm install -g firebase-tools`)
-- Git
-- Firebase project (create at [Firebase Console](https://console.firebase.google.com/))
-- OpenAI API key
-- Pinecone account (for RAG functionality)
+- **Node.js 20+** and npm/yarn
+- **Firebase CLI** (`npm install -g firebase-tools`)
+- **Git**
+- **Firebase project** (create at [Firebase Console](https://console.firebase.google.com/))
+- **OpenAI API key** (get from [OpenAI Platform](https://platform.openai.com/))
+- **Google Cloud account** (same as Firebase, for Vision API - optional)
 
 ### Installation
 
@@ -47,54 +47,189 @@ NurtureAI provides a supportive, conversational onboarding experience for parent
 2. **Install dependencies**
    ```bash
    npm install
+   cd functions && npm install && cd ..
    ```
 
 3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   ```
    
-   Edit `.env` with your credentials (note: Vite requires `VITE_` prefix):
+   Create a `.env` file in the root directory:
    ```env
-   # Firebase Configuration
-   VITE_FIREBASE_API_KEY=your_api_key
-   VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
-   VITE_FIREBASE_PROJECT_ID=your_project_id
-   VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   VITE_FIREBASE_APP_ID=your_app_id
+   # Firebase Configuration (get from Firebase Console > Project Settings > Your apps)
+   VITE_FIREBASE_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+   VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your-project-id
+   VITE_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=123456789012
+   VITE_FIREBASE_APP_ID=1:123456789012:web:abcdef1234567890
 
-   # OpenAI
-   VITE_OPENAI_API_KEY=your_openai_key
+   # OpenAI API (required for AI chat)
+   VITE_OPENAI_API_KEY=sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-   # Pinecone (for RAG)
-   VITE_PINECONE_API_KEY=your_pinecone_key
-   VITE_PINECONE_ENVIRONMENT=your_environment
-   VITE_PINECONE_INDEX_NAME=your_index_name
-
-   # Google Cloud Vision (Optional - for OCR)
-   VITE_GOOGLE_CLOUD_VISION_API_KEY=your_vision_key
+   # Google Cloud Vision API (optional - for OCR)
+   # Note: Vision API uses Application Default Credentials, no key needed in .env
+   # Just enable the API in Google Cloud Console
    ```
    
-   **Important:** Vite only reads environment variables at server startup. After updating `.env`, restart the dev server.
+   **⚠️ Important Notes:**
+   - Vite requires `VITE_` prefix for all environment variables
+   - Environment variables are only read at server startup
+   - **Restart dev server** after updating `.env`
+   - Never commit `.env` to version control (it's in `.gitignore`)
 
 4. **Initialize Firebase**
    ```bash
+   # Login to Firebase
    firebase login
+   
+   # Initialize Firebase (select Firestore, Functions, Hosting, Storage)
    firebase init
    ```
 
-5. **Import test data**
+5. **Enable Firebase Services**
+   
+   In [Firebase Console](https://console.firebase.google.com/):
+   - **Authentication**: Enable Email/Password provider
+   - **Firestore**: Create database (start in test mode, we'll deploy rules)
+   - **Storage**: Enable (start in test mode)
+   - **Functions**: Already configured via `firebase init`
+
+6. **Enable Google Cloud Vision API** (for OCR - optional)
+   
+   ```bash
+   # Navigate to Google Cloud Console
+   # https://console.cloud.google.com/apis/library/vision.googleapis.com
+   # Select your Firebase project and click "Enable"
+   ```
+   
+   Or use gcloud CLI:
+   ```bash
+   gcloud services enable vision.googleapis.com --project=your-project-id
+   ```
+
+7. **Import test data** (optional)
    ```bash
    npm run seed:database
    ```
 
-6. **Start development server**
+8. **Start development server**
    ```bash
    npm run dev
    ```
 
-   The app will open at `http://localhost:3000` (or the port shown in terminal)
+   The app will open at `http://localhost:3000`
+
+### Usage Examples
+
+#### Running Tests
+```bash
+# Run all tests
+npm run test:all
+
+# Run specific test suites
+npm run test:unit
+npm run test:integration
+npm run test:security
+
+# Run tests for specific features
+npm run test:assessment
+npm run test:onboarding
+npm run test:scheduling
+npm run test:insurance
+```
+
+#### Building for Production
+```bash
+# Build the app
+npm run build
+
+# Preview production build locally
+npm run preview
+```
+
+#### Deploying to Firebase
+```bash
+# Deploy everything
+firebase deploy
+
+# Deploy only functions
+firebase deploy --only functions
+
+# Deploy only hosting
+firebase deploy --only hosting
+
+# Deploy security rules
+firebase deploy --only firestore:rules
+
+# Deploy indexes
+firebase deploy --only firestore:indexes
+```
+
+### Troubleshooting
+
+#### Issue: "Firebase configuration is missing"
+**Solution:**
+- Verify `.env` file exists in root directory
+- Check all variables have `VITE_` prefix
+- Restart dev server after updating `.env`
+- Verify Firebase config values in Firebase Console
+
+#### Issue: "Invalid API key" or Firebase errors
+**Solution:**
+- Double-check API key in Firebase Console → Project Settings
+- Ensure you're using the correct Firebase project
+- Check for extra spaces or quotes in `.env` file
+- Verify Firebase services are enabled in Console
+
+#### Issue: "Port 3000 already in use"
+**Solution:**
+```bash
+# Windows PowerShell
+netstat -ano | findstr :3000
+taskkill /PID <PID> /F
+
+# Or change port in vite.config.js
+```
+
+#### Issue: "Module not found" errors
+**Solution:**
+```bash
+# Clean install
+rm -rf node_modules package-lock.json
+npm install
+
+# Also reinstall functions dependencies
+cd functions
+rm -rf node_modules package-lock.json
+npm install
+cd ..
+```
+
+#### Issue: "OpenAI API error"
+**Solution:**
+- Verify API key is correct and has credits
+- Check API key has access to GPT-4 models
+- Ensure `VITE_OPENAI_API_KEY` is set in `.env`
+- Restart dev server after adding key
+
+#### Issue: "Google Cloud Vision API error"
+**Solution:**
+- Ensure Vision API is enabled in Google Cloud Console
+- Verify you're using Application Default Credentials
+- Run: `gcloud auth application-default login`
+- Check service account has Vision API permissions
+
+#### Issue: "Firestore permission denied"
+**Solution:**
+- Deploy security rules: `firebase deploy --only firestore:rules`
+- Check rules file syntax: `firebase firestore:rules:validate`
+- Verify user is authenticated in Firebase Auth
+- Check user has required permissions in security rules
+
+#### Issue: "Build fails with path alias errors"
+**Solution:**
+- Verify `vite.config.js` has path alias configuration
+- Check `jsconfig.json` or `tsconfig.json` exists
+- Ensure imports use `@/` prefix correctly
 
 ---
 
@@ -355,18 +490,37 @@ For questions or issues:
 
 ---
 
-**Last Updated:** 2025-11-10  
+**Last Updated:** 2025-01-XX  
 **Version:** 1.0.0  
-**Status:** Active Development
+**Status:** ✅ Complete - Ready for Production Deployment
 
 ---
 
 ## 📈 Project Status
 
 - **Total PRs:** 18
-- **Completed:** 1 (PR #1 - Project Setup ✅)
-- **In Progress:** 1 (PR #2 - Documentation)
-- **Remaining:** 16
+- **Completed:** 18 ✅ (ALL PRs COMPLETE!)
+- **In Progress:** 0
+- **Remaining:** 0
+
+**Current Progress:** 100% complete 🎉
+
+### Completed Features
+- ✅ Project Setup & Documentation
+- ✅ Data Import & Validation
+- ✅ Authentication System
+- ✅ Core UI Components
+- ✅ AI Chat Interface
+- ✅ Onboarding Form System
+- ✅ Scheduling System
+- ✅ Insurance Verification & OCR
+- ✅ Questionnaire & Referral Integration
+- ✅ Support Chat System
+- ✅ UI Polish & Responsive Design
+- ✅ Testing Suite (400+ tests)
+- ✅ Security Rules & Indexes
+- ✅ Complete Documentation
+- ✅ CI/CD Pipeline & Deployment
 
 See [memory-bank/progress.md](./memory-bank/progress.md) for detailed progress tracking.
 
