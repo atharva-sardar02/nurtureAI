@@ -31,12 +31,14 @@
 ## Frontend Architecture
 
 ### Component Structure
-- **Pages:** Top-level route components (Landing, Auth, Assessment, Onboarding, Scheduling)
-- **Components:** Reusable UI components organized by feature (chat, onboarding, scheduling, insurance)
-- **Services:** API clients and business logic (Firebase, OpenAI, Pinecone)
-- **Hooks:** Custom React hooks for state management and side effects
-- **Contexts:** Global state management (Auth, Onboarding, Theme)
-- **Utils:** Helper functions and constants
+- **Pages:** Top-level route components (Landing, Auth, Assessment, Onboarding, Scheduling) - To be created
+- **Components:** 
+  - **UI Components:** shadcn/ui components (button, input, card, label, select, progress, scroll-area, textarea) in `src/components/ui/`
+  - **Feature Components:** AssessmentChat, OnboardingWizard, InsuranceVerification, ClinicianScheduler, Header in respective feature folders
+- **Services:** API clients and business logic (Firebase, OpenAI, Pinecone) - To be created
+- **Hooks:** Custom React hooks (use-mobile) in `src/hooks/`
+- **Contexts:** Global state management (Auth, Onboarding, Theme) - To be created
+- **Utils:** Helper functions (`cn` utility in `src/lib/utils.js`)
 
 ### State Management Pattern
 - **React Context API** for global state (auth, onboarding progress)
@@ -45,9 +47,9 @@
 - **Firestore Real-time Listeners** for live data updates
 
 ### Routing Pattern
-- **React Router v6** for client-side routing
-- **Protected Routes** wrapper for authentication guards
-- **Route-based code splitting** for performance
+- **React Router v6** for client-side routing - To be set up
+- **Protected Routes** wrapper for authentication guards - To be created
+- **Route-based code splitting** for performance - To be implemented
 
 ---
 
@@ -253,5 +255,5 @@
 ---
 
 **Last Updated:** 2025-11-10  
-**Status:** Active Development
+**Status:** Active Development - PR #1 in progress (60% complete)
 

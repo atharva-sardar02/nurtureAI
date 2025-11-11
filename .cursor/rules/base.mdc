@@ -1,0 +1,34 @@
+# Base Project Rules
+
+## Description
+Core rules for NurtureAI project development
+
+## Project Overview
+AI-powered parent onboarding system for Daybreak Health using React, Firebase, OpenAI, and Pinecone.
+
+## Key Principles
+1. **Empathy First** - Every interaction should be supportive
+2. **Security** - HIPAA considerations, data privacy, secure Firebase rules
+3. **Testing** - Write tests alongside features, not after
+4. **Documentation** - Update Memory Bank when making decisions
+5. **Code Quality** - Follow ESLint/Prettier, use functional components
+
+## Technology Stack
+- React 18+ with Vite
+- Firebase (Auth, Firestore, Storage, Functions)
+- OpenAI API (GPT-4)
+- Pinecone (RAG vector database)
+- React Router v6
+- React Context API for state
+
+## File Structure
+- Components organized by feature
+- Services for API clients and business logic
+- Hooks for reusable stateful logic
+- Utils for helper functions
+
+## Testing Strategy
+- Unit tests for utilities and services
+- Integration tests for Firebase/API
+- Component tests with React Testing Library
+- E2E tests for critical paths

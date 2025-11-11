@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light mode - soothing, gentle palette */
+    --background: 0 0% 98%;
+    --foreground: 240 10% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 15%;
+
+    /* Primary: Soft lavender for calm and nurture */
+    --primary: 280 50% 55%;
+    --primary-foreground: 0 0% 98%;
+
+    /* Secondary: Warm sage green for comfort and support */
+    --secondary: 160 30% 65%;
+    --secondary-foreground: 240 10% 15%;
+
+    /* Muted: Soft grays for subtle elements */
+    --muted: 200 5% 92%;
+    --muted-foreground: 220 10% 45%;
+
+    /* Accent: Soft peach for gentle emphasis */
+    --accent: 40 50% 72%;
+    --accent-foreground: 240 10% 15%;
+
+    --destructive: 27 90% 58%;
+    --destructive-foreground: 27 90% 58%;
+    --border: 200 5% 93%;
+    --input: 0 0% 97%;
+    --ring: 280 50% 55%;
+
+    --chart-1: 280 50% 55%;
+    --chart-2: 160 30% 65%;
+    --chart-3: 40 50% 72%;
+    --chart-4: 250 40% 58%;
+    --chart-5: 150 35% 68%;
+
+    --radius: 0.75rem;
+
+    --sidebar: 240 5% 98%;
+    --sidebar-foreground: 240 10% 15%;
+    --sidebar-primary: 280 50% 55%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 40 50% 72%;
+    --sidebar-accent-foreground: 240 10% 15%;
+    --sidebar-border: 200 5% 93%;
+    --sidebar-ring: 280 50% 55%;
+  }
+
+  .dark {
+    /* Ultra-soothing dark mode palette inspired by nature and wellness */
+    /* Deep slate background - calming, reduces eye strain */
+    --background: 250 15% 12%;
+    /* Soft warm off-white for text - gentle on eyes */
+    --foreground: 240 5% 90%;
+    /* Slightly elevated card color for subtle depth */
+    --card: 250 15% 18%;
+    --card-foreground: 240 5% 90%;
+    --popover: 250 15% 18%;
+    --popover-foreground: 240 5% 90%;
+
+    /* Soft dusty lavender - nurturing and calming */
+    --primary: 270 50% 60%;
+    --primary-foreground: 250 15% 12%;
+
+    /* Muted sage green - natural, grounding, therapeutic */
+    --secondary: 155 30% 68%;
+    --secondary-foreground: 250 15% 12%;
+
+    /* Very subtle muted tones for quiet accents */
+    --muted: 250 10% 26%;
+    --muted-foreground: 240 10% 62%;
+
+    /* Soft warm terracotta - gentle without being jarring */
+    --accent: 35 40% 68%;
+    --accent-foreground: 250 15% 12%;
+
+    --destructive: 25 70% 40%;
+    --destructive-foreground: 25 90% 64%;
+    /* Very subtle borders for minimal visual noise */
+    --border: 250 10% 24%;
+    --input: 250 15% 22%;
+    --ring: 270 50% 60%;
+
+    --chart-1: 270 50% 60%;
+    --chart-2: 155 30% 68%;
+    --chart-3: 35 40% 68%;
+    --chart-4: 250 40% 65%;
+    --chart-5: 145 30% 70%;
+
+    --sidebar: 250 15% 15%;
+    --sidebar-foreground: 240 5% 90%;
+    --sidebar-primary: 270 50% 60%;
+    --sidebar-primary-foreground: 250 15% 12%;
+    --sidebar-accent: 35 40% 68%;
+    --sidebar-accent-foreground: 250 15% 12%;
+    --sidebar-border: 250 10% 24%;
+    --sidebar-ring: 270 50% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+

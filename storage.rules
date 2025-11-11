@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Insurance card images - user can upload and read their own files
+    match /insurance-cards/{userId}/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // General user uploads
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+

@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Users can only read/write their own data
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Patients accessible only to their guardians or assigned clinician
+    match /patients/{patientId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid in resource.data.guardians ||
+        request.auth.uid == resource.data.assignedClinician ||
+        isAdmin()
+      );
+      allow write: if isAuthenticated() && request.auth.uid in resource.data.guardians;
+    }
+    
+    // Onboarding applications - owner access only
+    match /onboardingApplications/{applicationId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+    
+    // Conversations - owner access with 90-day TTL enforcement
+    match /conversations/{conversationId} {
+      allow read: if isAuthenticated() && 
+                  get(/databases/$(database)/documents/onboardingApplications/$(resource.data.applicationId)).data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow update: if isOwner(resource.data.userId) || isAdmin();
+      allow delete: if isOwner(resource.data.userId) && resource.data.userDeletionRequested == true;
+    }
+    
+    // Clinicians and availability - read by authenticated users (for matching)
+    match /clinicians/{clinicianId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Insurance coverages - owner access only
+    match /insuranceCoverages/{coverageId} {
+      allow read, write: if isAuthenticated() && 
+                          get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians contains request.auth.uid;
+    }
+    
+    // Appointments - accessible to patient guardian and assigned clinician
+    match /appointments/{appointmentId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.clinicianId ||
+        request.auth.uid in get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        request.auth.uid == resource.data.clinicianId ||
+        request.auth.uid in get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians
+      );
+    }
+    
+    // Questionnaires - guardian access only
+    match /questionnaires/{questionnaireId} {
+      allow read: if isAuthenticated() && 
+                  request.auth.uid in get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians;
+    }
+    
+    // Referrals - guardian access
+    match /referrals/{referralId} {
+      allow read: if isAuthenticated() && 
+                  request.auth.uid in get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians;
+    }
+    
+    // Knowledge base - read-only for all authenticated users
+    match /knowledgeBase/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Organizations - read by authenticated (for display purposes)
+    match /organizations/{orgId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}
+

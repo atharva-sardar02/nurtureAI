@@ -1,0 +1,54 @@
+# NurtureAI - Cursor Rules
+
+## Project Context
+This is an AI-powered parent onboarding system for Daybreak Health. The project uses React, Firebase, OpenAI API, and Pinecone for RAG functionality.
+
+## Code Style
+- Use functional components with hooks
+- Prefer named exports over default exports for utilities
+- Use async/await over promises
+- Follow React best practices (hooks rules, component composition)
+- Use ESLint and Prettier for code formatting
+
+## File Organization
+- Components in `src/components/` organized by feature
+- Services in `src/services/` for API clients and business logic
+- Hooks in `src/hooks/` for reusable stateful logic
+- Utils in `src/utils/` for helper functions
+- Contexts in `src/contexts/` for global state
+
+## Naming Conventions
+- Components: PascalCase (e.g., `ChatInterface.jsx`)
+- Services: camelCase (e.g., `openai.js`)
+- Hooks: camelCase with "use" prefix (e.g., `useAuth.js`)
+- Utils: camelCase (e.g., `dateHelpers.js`)
+
+## Testing
+- Write tests alongside features
+- Unit tests for utilities and services
+- Integration tests for Firebase and API interactions
+- Component tests using React Testing Library
+
+## Firebase
+- Use Firestore for database
+- Implement security rules for all collections
+- Use Firebase Auth for authentication
+- Use Firebase Storage for file uploads
+
+## AI Integration
+- OpenAI API for conversational AI
+- Pinecone for RAG vector search
+- Implement error handling and fallbacks
+- Cache embeddings when possible
+
+## Data Privacy
+- 90-day conversation retention
+- User-triggered data deletion
+- HIPAA considerations for sensitive data
+- Never log PII
+
+## Documentation
+- Update Memory Bank files when making architectural decisions
+- Comment complex logic
+- Keep PRD and task list updated
+
