@@ -18,22 +18,31 @@ import { ScrollArea } from '@/components/ui/scroll-area';
  */
 function MessageBubble({ message, isUser }) {
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
+    <div 
+      className={`flex gap-2 sm:gap-4 ${isUser ? 'justify-end' : 'justify-start'} mb-4 animate-in fade-in-50 duration-300`}
+      role="article"
+      aria-label={isUser ? "Your message" : "Support team message"}
+    >
       <div
-        className={`max-w-[80%] rounded-lg p-3 ${
+        className={`max-w-[85%] sm:max-w-[80%] rounded-lg p-3 sm:p-4 transition-all duration-200 ${
           isUser
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-muted-foreground'
+            ? 'bg-primary text-primary-foreground rounded-br-none'
+            : 'bg-muted text-muted-foreground rounded-bl-none'
         }`}
       >
-        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-        <p className={`text-xs mt-1 ${
-          isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
-        }`}>
+        <p className="text-sm sm:text-base whitespace-pre-wrap break-words">{message.content}</p>
+        <time 
+          className={`text-xs mt-2 block ${
+            isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
+          }`}
+          dateTime={message.timestamp instanceof Date 
+            ? message.timestamp.toISOString() 
+            : new Date(message.timestamp).toISOString()}
+        >
           {message.timestamp instanceof Date
             ? message.timestamp.toLocaleTimeString()
             : new Date(message.timestamp).toLocaleTimeString()}
-        </p>
+        </time>
       </div>
     </div>
   );
@@ -153,11 +162,14 @@ export function SupportChat({ chatId = null, initialMessage = null }) {
               onChange={(e) => setMessageInput(e.target.value)}
               onKeyPress={handleKeyPress}
               disabled={isStarting}
+              className="min-h-[44px] sm:min-h-[40px]"
+              aria-label="Message input to start support chat"
             />
             <Button
               onClick={handleStartChat}
               disabled={!messageInput.trim() || isStarting}
-              className="w-full"
+              className="w-full min-h-[44px] sm:min-h-[40px] transition-all duration-200"
+              aria-label="Start support chat"
             >
               {isStarting ? (
                 <>
@@ -166,7 +178,7 @@ export function SupportChat({ chatId = null, initialMessage = null }) {
                 </>
               ) : (
                 <>
-                  <MessageCircle className="w-4 h-4 mr-2" />
+                  <MessageCircle className="w-4 h-4 mr-2" aria-hidden="true" />
                   Start Chat
                 </>
               )}
@@ -179,23 +191,23 @@ export function SupportChat({ chatId = null, initialMessage = null }) {
 
   // Show active chat interface
   return (
-    <Card className="border border-border shadow-lg flex flex-col h-[600px]">
+    <Card className="border border-border shadow-lg flex flex-col h-[500px] sm:h-[600px]" role="region" aria-label="Support chat">
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <MessageCircle className="w-5 h-5 text-primary" aria-hidden="true" />
               Support Chat
             </CardTitle>
             <CardDescription>
               {chat.status === 'active' ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                <span className="flex items-center gap-2" role="status" aria-live="polite">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" aria-hidden="true"></span>
                   Active - Support team will respond soon
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <CheckCircle2 className="w-4 h-4 text-green-500" aria-hidden="true" />
                   Resolved
                 </span>
               )}
@@ -206,12 +218,12 @@ export function SupportChat({ chatId = null, initialMessage = null }) {
 
       <CardContent className="flex-1 flex flex-col p-0">
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto px-4" ref={scrollAreaRef}>
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4" ref={scrollAreaRef} role="log" aria-label="Chat messages" aria-live="polite">
           <ScrollArea className="h-full">
             <div className="py-4">
               {messages.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
-                  <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" aria-hidden="true" />
                   <p>No messages yet. Start the conversation!</p>
                 </div>
               ) : (
@@ -240,7 +252,7 @@ export function SupportChat({ chatId = null, initialMessage = null }) {
 
         {/* Input Area */}
         {chat.status === 'active' ? (
-          <div className="border-t p-4 flex-shrink-0">
+          <div className="border-t p-3 sm:p-4 flex-shrink-0 bg-muted/30">
             <div className="flex gap-2">
               <Input
                 placeholder="Type your message..."
@@ -248,20 +260,27 @@ export function SupportChat({ chatId = null, initialMessage = null }) {
                 onChange={(e) => setMessageInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 disabled={sending}
-                className="flex-1"
+                className="flex-1 min-h-[44px] sm:min-h-[40px]"
+                aria-label="Message input"
+                aria-describedby="support-chat-help"
               />
               <Button
                 onClick={handleSendMessage}
                 disabled={!messageInput.trim() || sending}
                 size="icon"
+                className="min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] transition-all duration-200"
+                aria-label="Send message"
               >
                 {sending ? (
-                  <LoadingSpinner size="sm" />
+                  <LoadingSpinner size="sm" aria-hidden="true" />
                 ) : (
-                  <Send className="w-4 h-4" />
+                  <Send className="w-4 h-4" aria-hidden="true" />
                 )}
               </Button>
             </div>
+            <p id="support-chat-help" className="text-xs text-muted-foreground mt-2">
+              Our support team typically responds within 24 hours.
+            </p>
           </div>
         ) : (
           <div className="border-t p-4 flex-shrink-0">

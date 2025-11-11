@@ -158,26 +158,36 @@ export function InsuranceCardUpload({ onOCRComplete, onError }) {
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             className={cn(
-              "border-2 border-dashed rounded-lg p-8 text-center",
-              "hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer",
+              "border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-all duration-200",
+              "hover:border-primary hover:bg-primary/5 cursor-pointer",
               error ? "border-destructive" : "border-border"
             )}
             onClick={() => fileInputRef.current?.click()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+            aria-label="Upload insurance card image"
           >
-            <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <p className="font-semibold text-foreground mb-1">
+            <Upload className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
+            <p className="font-semibold text-foreground mb-1 text-sm sm:text-base">
               Drop your insurance card here
             </p>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-4">
               or click to browse
             </p>
-            <Button variant="outline" size="sm" type="button">
+            <Button variant="outline" size="sm" type="button" className="min-h-[44px] sm:min-h-[36px]">
               Browse Files
             </Button>
             <input
               ref={fileInputRef}
               type="file"
               accept="image/jpeg,image/jpg,image/png"
+              aria-label="Select insurance card image file"
               onChange={handleFileInputChange}
               className="hidden"
             />
@@ -194,11 +204,12 @@ export function InsuranceCardUpload({ onOCRComplete, onError }) {
               <Button
                 variant="destructive"
                 size="icon"
-                className="absolute top-2 right-2"
+                className="absolute top-2 right-2 min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] transition-all duration-200"
                 onClick={handleRemove}
                 disabled={uploading || processing}
+                aria-label="Remove image"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" aria-hidden="true" />
               </Button>
             </div>
 
@@ -206,21 +217,22 @@ export function InsuranceCardUpload({ onOCRComplete, onError }) {
             <Button
               onClick={handleProcessOCR}
               disabled={uploading || processing}
-              className="w-full"
+              className="w-full min-h-[44px] sm:min-h-[40px] transition-all duration-200"
+              aria-label={uploading ? "Uploading image" : processing ? "Processing image" : "Extract insurance information from image"}
             >
               {uploading ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
                   Uploading...
                 </>
               ) : processing ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
                   Processing OCR...
                 </>
               ) : (
                 <>
-                  <Upload className="w-4 h-4 mr-2" />
+                  <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
                   Extract Information
                 </>
               )}

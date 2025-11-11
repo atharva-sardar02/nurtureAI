@@ -121,17 +121,31 @@ export function InsuranceVerification({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6" role="region" aria-label="Insurance verification">
       {/* Tab Selection: OCR Upload vs Manual Entry */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="manual" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            Manual Entry
+        <TabsList className="grid w-full grid-cols-2" role="tablist" aria-label="Insurance entry method">
+          <TabsTrigger 
+            value="manual" 
+            className="flex items-center gap-2 min-h-[44px] sm:min-h-[40px] transition-all duration-200"
+            role="tab"
+            aria-label="Manual entry tab"
+            aria-selected={activeTab === "manual"}
+          >
+            <FileText className="w-4 h-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Manual Entry</span>
+            <span className="sm:hidden">Manual</span>
           </TabsTrigger>
-          <TabsTrigger value="upload" className="flex items-center gap-2">
-            <Upload className="w-4 h-4" />
-            Upload Card
+          <TabsTrigger 
+            value="upload" 
+            className="flex items-center gap-2 min-h-[44px] sm:min-h-[40px] transition-all duration-200"
+            role="tab"
+            aria-label="Upload card tab"
+            aria-selected={activeTab === "upload"}
+          >
+            <Upload className="w-4 h-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Upload Card</span>
+            <span className="sm:hidden">Upload</span>
           </TabsTrigger>
         </TabsList>
 

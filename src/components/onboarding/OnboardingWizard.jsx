@@ -14,6 +14,7 @@ import { InsuranceVerification } from "@/components/insurance/InsuranceVerificat
 import { QuestionnaireHistorySummary } from "./QuestionnaireHistorySummary"
 import { DataDeletionOption } from "./DataDeletionOption"
 import { ReviewStep } from "./ReviewStep"
+import { LoadingSpinner } from "@/components/common/LoadingSpinner"
 
 export function OnboardingWizard() {
   const { 
@@ -89,17 +90,17 @@ export function OnboardingWizard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Progress Bar */}
-      <div className="bg-muted/30 py-6 px-4 sm:px-6 lg:px-8 border-b border-border sticky top-0 z-10">
+      <div className="bg-muted/30 py-4 sm:py-6 px-4 sm:px-6 lg:px-8 border-b border-border sticky top-0 z-10">
         <div className="max-w-2xl mx-auto">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Complete Your Profile</h2>
-            <span className="text-sm text-muted-foreground">
+          <div className="flex justify-between items-center mb-3 sm:mb-4">
+            <h2 className="text-base sm:text-lg font-semibold">Complete Your Profile</h2>
+            <span className="text-xs sm:text-sm text-muted-foreground" aria-label={`Step ${stepIndex + 1} of ${totalSteps}`}>
               {stepIndex + 1} of {totalSteps}
             </span>
           </div>
-          <div className="w-full bg-border rounded-full h-2">
+          <div className="w-full bg-border rounded-full h-2" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Onboarding progress">
             <div
-              className="bg-primary h-2 rounded-full transition-all duration-300"
+              className="bg-primary h-2 rounded-full transition-all duration-300 ease-in-out"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -107,29 +108,39 @@ export function OnboardingWizard() {
       </div>
 
       {/* Main Content */}
-      <div className="py-12 px-4 sm:px-6 lg:px-8">
+      <div className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto">
-          {renderStep()}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <LoadingSpinner size="lg" text="Loading..." />
+            </div>
+          ) : (
+            <div className="animate-in fade-in-50 duration-300">
+              {renderStep()}
+            </div>
+          )}
 
           {/* Navigation Buttons */}
           {currentStep !== ONBOARDING_STEPS.WELCOME && currentStep !== ONBOARDING_STEPS.REVIEW && (
-            <div className="flex gap-4 mt-8">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6 sm:mt-8">
               <Button
                 variant="outline"
                 onClick={handleBack}
                 disabled={!canGoBack() || loading}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[40px] transition-all duration-200"
+                aria-label="Go to previous step"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
                 Back
               </Button>
               <Button
                 onClick={handleNext}
                 disabled={loading}
-                className="flex-1 flex items-center justify-center gap-2"
+                className="flex-1 flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[40px] transition-all duration-200"
+                aria-label="Continue to next step"
               >
                 Continue
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </Button>
             </div>
           )}

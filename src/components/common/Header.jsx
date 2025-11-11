@@ -40,74 +40,90 @@ export function Header({ title = "NurtureAI" }) {
             </div>
           </div>
 
-          {/* Desktop Navigation */}
-          {user && (
-            <nav className="hidden md:flex items-center gap-6">
-              <button
-                onClick={() => navigate("/")}
-                className={cn(
-                  "text-sm font-medium transition-colors flex items-center gap-2",
-                  isActive("/") 
-                    ? "text-foreground" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Home className="w-4 h-4" />
-                Home
-              </button>
-              <button
-                onClick={() => navigate("/assessment")}
-                className={cn(
-                  "text-sm font-medium transition-colors flex items-center gap-2",
-                  isActive("/assessment") 
-                    ? "text-foreground" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <FileText className="w-4 h-4" />
-                Assessment
-              </button>
-              <button
-                onClick={() => navigate("/onboarding")}
-                className={cn(
-                  "text-sm font-medium transition-colors flex items-center gap-2",
-                  isActive("/onboarding") 
-                    ? "text-foreground" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <UserPlus className="w-4 h-4" />
-                Onboarding
-              </button>
+               {/* Desktop Navigation */}
+               {user && (
+                 <nav className="hidden md:flex items-center gap-4 lg:gap-6" role="navigation" aria-label="Main navigation">
+                   <button
+                     onClick={() => navigate("/")}
+                     className={cn(
+                       "text-sm font-medium transition-colors flex items-center gap-2 min-h-[44px] px-2 rounded-md hover:bg-muted/50",
+                       isActive("/")
+                         ? "text-foreground"
+                         : "text-muted-foreground hover:text-foreground"
+                     )}
+                     aria-label="Navigate to home"
+                     aria-current={isActive("/") ? "page" : undefined}
+                   >
+                     <Home className="w-4 h-4" aria-hidden="true" />
+                     Home
+                   </button>
+                   <button
+                     onClick={() => navigate("/assessment")}
+                     className={cn(
+                       "text-sm font-medium transition-colors flex items-center gap-2 min-h-[44px] px-2 rounded-md hover:bg-muted/50",
+                       isActive("/assessment")
+                         ? "text-foreground"
+                         : "text-muted-foreground hover:text-foreground"
+                     )}
+                     aria-label="Navigate to assessment"
+                     aria-current={isActive("/assessment") ? "page" : undefined}
+                   >
+                     <FileText className="w-4 h-4" aria-hidden="true" />
+                     Assessment
+                   </button>
+                   <button
+                     onClick={() => navigate("/onboarding")}
+                     className={cn(
+                       "text-sm font-medium transition-colors flex items-center gap-2 min-h-[44px] px-2 rounded-md hover:bg-muted/50",
+                       isActive("/onboarding")
+                         ? "text-foreground"
+                         : "text-muted-foreground hover:text-foreground"
+                     )}
+                     aria-label="Navigate to onboarding"
+                     aria-current={isActive("/onboarding") ? "page" : undefined}
+                   >
+                     <UserPlus className="w-4 h-4" aria-hidden="true" />
+                     Onboarding
+                   </button>
                    <button
                      onClick={() => navigate("/scheduling")}
                      className={cn(
-                       "text-sm font-medium transition-colors flex items-center gap-2",
+                       "text-sm font-medium transition-colors flex items-center gap-2 min-h-[44px] px-2 rounded-md hover:bg-muted/50",
                        isActive("/scheduling")
                          ? "text-foreground"
                          : "text-muted-foreground hover:text-foreground"
                      )}
+                     aria-label="Navigate to scheduling"
+                     aria-current={isActive("/scheduling") ? "page" : undefined}
                    >
-                     <Calendar className="w-4 h-4" />
+                     <Calendar className="w-4 h-4" aria-hidden="true" />
                      Scheduling
                    </button>
                    <button
                      onClick={() => navigate("/support")}
                      className={cn(
-                       "text-sm font-medium transition-colors flex items-center gap-2",
+                       "text-sm font-medium transition-colors flex items-center gap-2 min-h-[44px] px-2 rounded-md hover:bg-muted/50",
                        isActive("/support")
                          ? "text-foreground"
                          : "text-muted-foreground hover:text-foreground"
                      )}
+                     aria-label="Navigate to support"
+                     aria-current={isActive("/support") ? "page" : undefined}
                    >
-                     <MessageCircle className="w-4 h-4" />
+                     <MessageCircle className="w-4 h-4" aria-hidden="true" />
                      Support
                    </button>
               <span className="text-sm text-muted-foreground">
                 {user.email}
               </span>
-              <Button variant="ghost" size="sm" onClick={handleSignOut} className="flex items-center gap-2">
-                <LogOut className="w-4 h-4" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleSignOut} 
+                className="flex items-center gap-2 min-h-[44px] sm:min-h-[40px] transition-all duration-200"
+                aria-label="Sign out"
+              >
+                <LogOut className="w-4 h-4" aria-hidden="true" />
                 <span>Sign Out</span>
               </Button>
             </nav>
@@ -120,9 +136,12 @@ export function Header({ title = "NurtureAI" }) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 min-h-[44px] min-w-[44px] transition-all duration-200"
+                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-menu"
               >
-                <Menu className="w-5 h-5" />
+                <Menu className="w-5 h-5" aria-hidden="true" />
               </Button>
             </div>
           )}
@@ -130,21 +149,29 @@ export function Header({ title = "NurtureAI" }) {
 
         {/* Mobile Menu */}
         {user && mobileMenuOpen && (
-          <div className="md:hidden border-t border-border py-4">
-            <div className="flex flex-col gap-4">
+          <div 
+            id="mobile-menu"
+            className="md:hidden border-t border-border py-4"
+            role="menu"
+            aria-label="Mobile navigation menu"
+          >
+            <div className="flex flex-col gap-2">
               <button
                 onClick={() => {
                   navigate("/")
                   setMobileMenuOpen(false)
                 }}
                 className={cn(
-                  "text-sm font-medium transition-colors text-left flex items-center gap-2",
+                  "text-sm font-medium transition-colors text-left flex items-center gap-2 min-h-[44px] px-4 rounded-md hover:bg-muted/50",
                   isActive("/") 
                     ? "text-foreground" 
                     : "text-muted-foreground hover:text-foreground"
                 )}
+                role="menuitem"
+                aria-label="Navigate to home"
+                aria-current={isActive("/") ? "page" : undefined}
               >
-                <Home className="w-4 h-4" />
+                <Home className="w-4 h-4" aria-hidden="true" />
                 Home
               </button>
               <button
@@ -153,13 +180,16 @@ export function Header({ title = "NurtureAI" }) {
                   setMobileMenuOpen(false)
                 }}
                 className={cn(
-                  "text-sm font-medium transition-colors text-left flex items-center gap-2",
+                  "text-sm font-medium transition-colors text-left flex items-center gap-2 min-h-[44px] px-4 rounded-md hover:bg-muted/50",
                   isActive("/assessment") 
                     ? "text-foreground" 
                     : "text-muted-foreground hover:text-foreground"
                 )}
+                role="menuitem"
+                aria-label="Navigate to assessment"
+                aria-current={isActive("/assessment") ? "page" : undefined}
               >
-                <FileText className="w-4 h-4" />
+                <FileText className="w-4 h-4" aria-hidden="true" />
                 Assessment
               </button>
               <button
@@ -168,50 +198,65 @@ export function Header({ title = "NurtureAI" }) {
                   setMobileMenuOpen(false)
                 }}
                 className={cn(
-                  "text-sm font-medium transition-colors text-left flex items-center gap-2",
+                  "text-sm font-medium transition-colors text-left flex items-center gap-2 min-h-[44px] px-4 rounded-md hover:bg-muted/50",
                   isActive("/onboarding") 
                     ? "text-foreground" 
                     : "text-muted-foreground hover:text-foreground"
                 )}
+                role="menuitem"
+                aria-label="Navigate to onboarding"
+                aria-current={isActive("/onboarding") ? "page" : undefined}
               >
-                <UserPlus className="w-4 h-4" />
+                <UserPlus className="w-4 h-4" aria-hidden="true" />
                 Onboarding
               </button>
-                   <button
-                     onClick={() => {
-                       navigate("/scheduling")
-                       setMobileMenuOpen(false)
-                     }}
-                     className={cn(
-                       "text-sm font-medium transition-colors text-left flex items-center gap-2",
-                       isActive("/scheduling")
-                         ? "text-foreground"
-                         : "text-muted-foreground hover:text-foreground"
-                     )}
-                   >
-                     <Calendar className="w-4 h-4" />
-                     Scheduling
-                   </button>
-                   <button
-                     onClick={() => {
-                       navigate("/support")
-                       setMobileMenuOpen(false)
-                     }}
-                     className={cn(
-                       "text-sm font-medium transition-colors text-left flex items-center gap-2",
-                       isActive("/support")
-                         ? "text-foreground"
-                         : "text-muted-foreground hover:text-foreground"
-                     )}
-                   >
-                     <MessageCircle className="w-4 h-4" />
-                     Support
-                   </button>
+              <button
+                onClick={() => {
+                  navigate("/scheduling")
+                  setMobileMenuOpen(false)
+                }}
+                className={cn(
+                  "text-sm font-medium transition-colors text-left flex items-center gap-2 min-h-[44px] px-4 rounded-md hover:bg-muted/50",
+                  isActive("/scheduling") 
+                    ? "text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                role="menuitem"
+                aria-label="Navigate to scheduling"
+                aria-current={isActive("/scheduling") ? "page" : undefined}
+              >
+                <Calendar className="w-4 h-4" aria-hidden="true" />
+                Scheduling
+              </button>
+              <button
+                onClick={() => {
+                  navigate("/support")
+                  setMobileMenuOpen(false)
+                }}
+                className={cn(
+                  "text-sm font-medium transition-colors text-left flex items-center gap-2 min-h-[44px] px-4 rounded-md hover:bg-muted/50",
+                  isActive("/support") 
+                    ? "text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                role="menuitem"
+                aria-label="Navigate to support"
+                aria-current={isActive("/support") ? "page" : undefined}
+              >
+                <MessageCircle className="w-4 h-4" aria-hidden="true" />
+                Support
+              </button>
               <div className="text-sm text-muted-foreground pt-2 border-t border-border">
                 {user.email}
               </div>
-              <Button variant="ghost" size="sm" onClick={handleSignOut} className="flex items-center gap-2 justify-start">
-                <LogOut className="w-4 h-4" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleSignOut} 
+                className="flex items-center gap-2 justify-start min-h-[44px] px-4 transition-all duration-200"
+                aria-label="Sign out"
+              >
+                <LogOut className="w-4 h-4" aria-hidden="true" />
                 <span>Sign Out</span>
               </Button>
             </div>

@@ -70,15 +70,16 @@ export function TimeSlotSelector({ slots = [], selectedSlot, onSelectSlot, loadi
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Clock className="w-5 h-5" aria-hidden="true" />
             Available Times
           </CardTitle>
           <CardDescription>Loading available time slots...</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            Loading...
+          <div className="text-center py-8 text-muted-foreground" role="status" aria-live="polite">
+            <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary mb-2"></div>
+            <p>Loading...</p>
           </div>
         </CardContent>
       </Card>
@@ -87,17 +88,17 @@ export function TimeSlotSelector({ slots = [], selectedSlot, onSelectSlot, loadi
 
   if (slots.length === 0) {
     return (
-      <Card>
+      <Card className="border-dashed">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Clock className="w-5 h-5" aria-hidden="true" />
             Available Times
           </CardTitle>
           <CardDescription>No available time slots</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            No available appointments at this time. Please check back later or select a different clinician.
+            <p>No available appointments at this time. Please check back later or select a different clinician.</p>
           </div>
         </CardContent>
       </Card>
@@ -107,22 +108,22 @@ export function TimeSlotSelector({ slots = [], selectedSlot, onSelectSlot, loadi
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="w-5 h-5" />
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+          <Clock className="w-5 h-5" aria-hidden="true" />
           Available Times
         </CardTitle>
         <CardDescription>
           Select a date and time for your appointment
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-6">
         {groupedSlots.map((group) => (
           <div key={group.dateKey}>
             <div className="flex items-center gap-2 mb-3">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <h3 className="font-semibold text-sm">{group.dateKey}</h3>
+              <Calendar className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+              <h3 className="font-semibold text-sm sm:text-base">{group.dateKey}</h3>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2" role="group" aria-label={`Time slots for ${group.dateKey}`}>
               {group.slots.map((slot) => {
                 const isSelected = selectedSlot?.id === slot.id;
                 return (
@@ -131,12 +132,14 @@ export function TimeSlotSelector({ slots = [], selectedSlot, onSelectSlot, loadi
                     variant={isSelected ? "default" : "outline"}
                     onClick={() => onSelectSlot(slot)}
                     className={cn(
-                      "flex items-center justify-center gap-2",
+                      "flex items-center justify-center gap-2 min-h-[44px] sm:min-h-[40px] transition-all duration-200 text-xs sm:text-sm",
                       isSelected && "ring-2 ring-primary/20"
                     )}
+                    aria-label={`Select appointment time ${formatTimeSlot(slot)} on ${group.dateKey}`}
+                    aria-pressed={isSelected}
                   >
-                    <Clock className="w-4 h-4" />
-                    {formatTimeSlot(slot)}
+                    <Clock className="w-3 h-3 sm:w-4 sm:h-4" aria-hidden="true" />
+                    <span className="truncate">{formatTimeSlot(slot)}</span>
                   </Button>
                 );
               })}

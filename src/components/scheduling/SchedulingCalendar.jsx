@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { LoadingSpinner } from "@/components/common/LoadingSpinner"
 import { useNavigate } from "react-router-dom"
 import { Calendar, AlertCircle, CheckCircle2 } from "lucide-react"
+import { EmptyState } from "@/components/common/EmptyState"
 
 export function SchedulingCalendar() {
   const navigate = useNavigate();
@@ -69,15 +70,21 @@ export function SchedulingCalendar() {
   };
 
   if (loading && clinicians.length === 0) {
-    return <LoadingSpinner fullPage message="Loading available clinicians..." />;
+    return (
+      <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <LoadingSpinner fullPage message="Loading available clinicians..." />
+        </div>
+      </div>
+    );
   }
 
   if (error && clinicians.length === 0) {
     return (
       <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
+          <Alert variant="destructive" role="alert" aria-live="assertive">
+            <AlertCircle className="h-4 w-4" aria-hidden="true" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         </div>
@@ -104,9 +111,9 @@ export function SchedulingCalendar() {
     <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold mb-2">Schedule Your First Appointment</h1>
-          <p className="text-lg text-muted-foreground">
+        <div className="mb-8 sm:mb-12">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">Schedule Your First Appointment</h1>
+          <p className="text-base sm:text-lg text-muted-foreground">
             Select a clinician and time that works best for your family
           </p>
         </div>
@@ -123,11 +130,14 @@ export function SchedulingCalendar() {
         <div className="mb-12">
           <h2 className="text-2xl font-semibold mb-6">Available Clinicians</h2>
           {clinicians.length === 0 ? (
-            <Card>
+            <Card className="border-dashed">
               <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">
-                  No available clinicians found. Please check back later or contact support.
-                </p>
+                <EmptyState
+                  title="No Clinicians Available"
+                  description="We're currently working on matching you with the right clinician. Please check back later or contact support for assistance."
+                  icon={Calendar}
+                  variant="illustrated"
+                />
               </CardContent>
             </Card>
           ) : (

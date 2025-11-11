@@ -38,12 +38,22 @@ export function ClinicianCard({ clinician, selected, onSelect }) {
   return (
     <Card
       className={cn(
-        "border transition-all cursor-pointer hover:shadow-lg",
+        "border transition-all duration-200 cursor-pointer hover:shadow-lg focus-within:ring-2 focus-within:ring-primary/20",
         selected
           ? "border-primary ring-2 ring-primary/20 shadow-lg"
           : "border-border"
       )}
       onClick={() => onSelect(clinician.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect(clinician.id);
+        }
+      }}
+      tabIndex={0}
+      role="button"
+      aria-label={`Select clinician ${formatName(clinician.name || clinician.displayName || clinician.profileData?.name)}`}
+      aria-pressed={selected}
     >
       <CardContent className="pt-6">
         <div className="text-center mb-4">
@@ -118,12 +128,13 @@ export function ClinicianCard({ clinician, selected, onSelect }) {
         )}
 
         <Button 
-          className="w-full" 
+          className="w-full min-h-[44px] sm:min-h-[40px] transition-all duration-200" 
           variant={selected ? "default" : "outline"}
           onClick={(e) => {
             e.stopPropagation();
             onSelect(clinician.id);
           }}
+          aria-label={selected ? "Clinician selected" : "Select this clinician"}
         >
           {selected ? (
             <>
