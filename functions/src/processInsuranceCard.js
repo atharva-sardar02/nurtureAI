@@ -4,11 +4,14 @@
  */
 
 const { onCall } = require('firebase-functions/v2/https');
-const { ImageAnnotatorClient } = require('@google-cloud/vision');
 
-// Initialize Vision client lazily to avoid timeout during module load
+// Lazy load Vision client to avoid timeout during module initialization
+let ImageAnnotatorClient = null;
 let vision = null;
 function getVisionClient() {
+  if (!ImageAnnotatorClient) {
+    ImageAnnotatorClient = require('@google-cloud/vision').ImageAnnotatorClient;
+  }
   if (!vision) {
     vision = new ImageAnnotatorClient();
   }
