@@ -51,30 +51,32 @@ NurtureAI provides a supportive, conversational onboarding experience for parent
 
 3. **Set up environment variables**
    ```bash
-   cp .env.example .env.local
+   cp .env.example .env
    ```
    
-   Edit `.env.local` with your credentials:
+   Edit `.env` with your credentials (note: Vite requires `VITE_` prefix):
    ```env
    # Firebase Configuration
-   REACT_APP_FIREBASE_API_KEY=your_api_key
-   REACT_APP_FIREBASE_AUTH_DOMAIN=your_auth_domain
-   REACT_APP_FIREBASE_PROJECT_ID=your_project_id
-   REACT_APP_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-   REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   REACT_APP_FIREBASE_APP_ID=your_app_id
+   VITE_FIREBASE_API_KEY=your_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   VITE_FIREBASE_APP_ID=your_app_id
 
    # OpenAI
-   REACT_APP_OPENAI_API_KEY=your_openai_key
+   VITE_OPENAI_API_KEY=your_openai_key
 
    # Pinecone (for RAG)
-   REACT_APP_PINECONE_API_KEY=your_pinecone_key
-   REACT_APP_PINECONE_ENVIRONMENT=your_environment
-   REACT_APP_PINECONE_INDEX_NAME=your_index_name
+   VITE_PINECONE_API_KEY=your_pinecone_key
+   VITE_PINECONE_ENVIRONMENT=your_environment
+   VITE_PINECONE_INDEX_NAME=your_index_name
 
    # Google Cloud Vision (Optional - for OCR)
-   REACT_APP_GOOGLE_CLOUD_VISION_API_KEY=your_vision_key
+   VITE_GOOGLE_CLOUD_VISION_API_KEY=your_vision_key
    ```
+   
+   **Important:** Vite only reads environment variables at server startup. After updating `.env`, restart the dev server.
 
 4. **Initialize Firebase**
    ```bash
@@ -89,10 +91,10 @@ NurtureAI provides a supportive, conversational onboarding experience for parent
 
 6. **Start development server**
    ```bash
-   npm start
+   npm run dev
    ```
 
-   The app will open at `http://localhost:3000`
+   The app will open at `http://localhost:3000` (or the port shown in terminal)
 
 ---
 
@@ -147,9 +149,11 @@ nurtureAI/
 
 ### Frontend
 - **React 18+** - UI framework
-- **React Router v6** - Client-side routing
+- **Vite** - Build tool and dev server
+- **React Router v6** - Client-side routing (to be implemented)
 - **React Context API** - State management
-- **Material-UI / Tailwind CSS** - UI components and styling
+- **Tailwind CSS v3** - Styling framework
+- **shadcn/ui** - UI component library
 - **React Hook Form** - Form handling
 
 ### Backend
@@ -201,12 +205,13 @@ npm test -- e2e
 ### Available Scripts
 
 ```bash
-npm start              # Start development server
+npm run dev            # Start Vite development server
 npm run build          # Build for production
-npm test              # Run tests
-npm run seed:database  # Import CSV data to Firestore
-npm run lint           # Run ESLint
-npm run format         # Format code with Prettier
+npm run preview        # Preview production build
+npm test              # Run tests (when configured)
+npm run seed:database  # Import CSV data to Firestore (when implemented)
+npm run lint          # Run ESLint
+npm run format        # Format code with Prettier
 ```
 
 ---
@@ -359,9 +364,9 @@ For questions or issues:
 ## 📈 Project Status
 
 - **Total PRs:** 18
-- **Completed:** 0
-- **In Progress:** 0
-- **Remaining:** 18
+- **Completed:** 1 (PR #1 - Project Setup ✅)
+- **In Progress:** 1 (PR #2 - Documentation)
+- **Remaining:** 16
 
 See [memory-bank/progress.md](./memory-bank/progress.md) for detailed progress tracking.
 

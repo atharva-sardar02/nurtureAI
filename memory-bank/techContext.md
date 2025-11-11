@@ -7,12 +7,14 @@
 
 ### Frontend
 - **Framework:** React 18+
-- **Routing:** React Router v6
+- **Build Tool:** Vite 5+ (replaced Create React App)
+- **Routing:** React Router v6 (to be implemented)
 - **State Management:** React Context API
-- **UI Components:** Material-UI or Tailwind CSS
+- **Styling:** Tailwind CSS v3
+- **UI Components:** shadcn/ui (built on Radix UI + Tailwind)
 - **Form Handling:** React Hook Form
-- **API Calls:** Axios or Fetch API
-- **Testing:** Jest, React Testing Library, Cypress/Playwright
+- **API Calls:** Fetch API
+- **Testing:** Jest, React Testing Library, Cypress/Playwright (to be configured)
 
 ### Backend
 - **Database:** Firebase Firestore (NoSQL)
@@ -42,26 +44,30 @@
 - Code editor (VS Code recommended)
 
 ### Environment Variables
+**Important:** Vite requires `VITE_` prefix for environment variables (not `REACT_APP_`)
+
 ```env
 # Firebase
-REACT_APP_FIREBASE_API_KEY=
-REACT_APP_FIREBASE_AUTH_DOMAIN=
-REACT_APP_FIREBASE_PROJECT_ID=
-REACT_APP_FIREBASE_STORAGE_BUCKET=
-REACT_APP_FIREBASE_MESSAGING_SENDER_ID=
-REACT_APP_FIREBASE_APP_ID=
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
 
 # OpenAI
-REACT_APP_OPENAI_API_KEY=
+VITE_OPENAI_API_KEY=
 
 # Pinecone
-REACT_APP_PINECONE_API_KEY=
-REACT_APP_PINECONE_ENVIRONMENT=
-REACT_APP_PINECONE_INDEX_NAME=
+VITE_PINECONE_API_KEY=
+VITE_PINECONE_ENVIRONMENT=
+VITE_PINECONE_INDEX_NAME=
 
 # Google Cloud Vision (Optional for OCR)
-REACT_APP_GOOGLE_CLOUD_VISION_API_KEY=
+VITE_GOOGLE_CLOUD_VISION_API_KEY=
 ```
+
+**Note:** Vite only reads environment variables at server startup. Restart dev server after updating `.env`.
 
 ### Project Structure
 ```
@@ -168,8 +174,9 @@ nurtureAI/
 - **Coverage Target:** 80%+
 
 ### Build & Deploy
-- **Development:** `npm start` (React dev server)
-- **Build:** `npm run build` (production build)
+- **Development:** `npm run dev` (Vite dev server on port 3000)
+- **Build:** `npm run build` (production build to `build/` directory)
+- **Preview:** `npm run preview` (preview production build locally)
 - **Deploy:** Firebase Hosting
 - **CI/CD:** GitHub Actions (optional)
 
@@ -199,11 +206,16 @@ nurtureAI/
 ### Core Dependencies
 ```json
 {
-  "react": "^18.0.0",
-  "react-router-dom": "^6.0.0",
-  "firebase": "^10.0.0",
-  "openai": "^4.0.0",
-  "@pinecone-database/pinecone": "^1.0.0"
+  "react": "^18.2.0",
+  "react-dom": "^18.2.0",
+  "react-router-dom": "^6.20.0",
+  "firebase": "^10.7.1",
+  "vite": "^5.0.8",
+  "@vitejs/plugin-react": "^4.2.1",
+  "tailwindcss": "^3.4.18",
+  "shadcn/ui": "via Radix UI primitives",
+  "react-hook-form": "^7.66.0",
+  "zod": "^4.1.12"
 }
 ```
 
