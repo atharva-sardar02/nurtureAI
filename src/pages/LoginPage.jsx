@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/contexts/AuthContext"
-import { Header } from "@/components/layout/header"
+import { Header } from "@/components/common/Header"
 import { resetPassword } from "@/services/firebase/auth"
 
 export function LoginPage() {

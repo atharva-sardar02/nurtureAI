@@ -7,6 +7,7 @@ import { BrowserRouter, Routes as RouterRoutes, Route, Navigate } from 'react-ro
 import { ProtectedRoute } from './ProtectedRoute';
 import { LoginPage } from '@/pages/LoginPage';
 import { LandingPage } from '@/pages/LandingPage';
+import { Landing } from '@/pages/Landing';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 /**
@@ -19,6 +20,7 @@ export function Routes() {
       <AuthProvider>
         <RouterRoutes>
           {/* Public routes */}
+          <Route path="/landing" element={<Landing />} />
           <Route path="/login" element={<LoginPage />} />
           
           {/* Protected routes */}
