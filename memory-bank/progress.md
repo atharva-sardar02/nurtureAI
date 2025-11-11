@@ -84,10 +84,12 @@
 - [x] Add form validation
 - [x] Implement user profile management
 
-### PR #5: Core UI Components & Layout
-- [ ] Create common components
-- [ ] Build landing page
-- [ ] Set up routing
+### PR #5: Core UI Components & Layout ✅ COMPLETE
+- [x] Create common components (Header, Footer, LoadingSpinner, ErrorBoundary)
+- [x] Build public landing page with hero section
+- [x] Create utility functions (dateHelpers, validators, constants)
+- [x] Set up routing structure
+- [x] Create layout wrapper component
 
 ### PR #6: AI Chat Interface (Core - No RAG)
 - [ ] Integrate OpenAI API
@@ -199,11 +201,11 @@
 ## 📈 Metrics
 
 ### Code Metrics
-- **Lines of Code:** ~8,000+ (PRs #1-4 complete)
+- **Lines of Code:** ~10,000+ (PRs #1-5 complete)
 - **Test Coverage:** ~15% (target: 80%+)
-- **Components Created:** 20+ (UI components + feature components + pages)
+- **Components Created:** 30+ (UI components + feature components + pages + common components)
 - **Services Created:** 3 (Firebase config, Auth, Firestore)
-- **Utils Created:** 2 (kinshipMapping, questionnaireMapping)
+- **Utils Created:** 5 (kinshipMapping, questionnaireMapping, dateHelpers, validators, constants)
 - **Contexts Created:** 1 (AuthContext)
 - **Scripts Created:** 4 (importCSV, seedDatabase, validateData, generateKinshipMapping)
 - **Tests Created:** 97+ (unit + integration)
@@ -212,7 +214,7 @@
 ### Feature Metrics
 - **P0 Features Complete:** 0/3 (0%)
 - **P1 Features Complete:** 0/6 (0%)
-- **Total PRs Complete:** 4/18 (22.2%) - PR #1 ✅, PR #2 ✅, PR #3 ✅, PR #4 ✅
+- **Total PRs Complete:** 5/18 (27.8%) - PR #1 ✅, PR #2 ✅, PR #3 ✅, PR #4 ✅, PR #5 ✅
 
 ### Data Metrics
 - **CSV Files Imported:** 16/16 (100%) ✅
