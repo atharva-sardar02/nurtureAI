@@ -86,6 +86,8 @@
     "test:crisis": "node tests/unit/CrisisDetection.test.js",
     "test:aichat": "node tests/integration/aiChat.test.js",
     "test:ai": "npm run test:assessment && npm run test:crisis && npm run test:aichat",
+    "test:onboarding": "node tests/unit/onboardingValidation.test.js && node tests/unit/kinshipSelector.test.js",
+    "test:onboarding:integration": "node tests/integration/onboarding.test.js",
     "verify:env": "node scripts/verifyEnv.js",
     "kinship:validate": "node scripts/generateKinshipMapping.js validate",
     "kinship:export": "node scripts/generateKinshipMapping.js export"

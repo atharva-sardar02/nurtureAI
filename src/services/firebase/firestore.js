@@ -222,6 +222,87 @@ export async function deleteAllUserConversations(userId) {
   }
 }
 
+/**
+ * Onboarding Application Functions
+ */
+
+/**
+ * Create a new onboarding application
+ * @param {string} userId - User ID
+ * @param {Object} applicationData - Application data
+ * @returns {Promise<{success: boolean, applicationId?: string, error?: string}>}
+ */
+export async function createOnboardingApplication(userId, applicationData = {}) {
+  try {
+    const applicationRef = await addDoc(collection(db, 'onboardingApplications'), {
+      userId,
+      status: 'started',
+      ...applicationData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log('✅ Onboarding application created:', applicationRef.id);
+    return { success: true, applicationId: applicationRef.id };
+  } catch (error) {
+    console.error('❌ Error creating onboarding application:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Get onboarding application for a user
+ * @param {string} userId - User ID
+ * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
+ */
+export async function getOnboardingApplication(userId) {
+  try {
+    const q = query(
+      collection(db, 'onboardingApplications'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
+      limit(1)
+    );
+
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      return { success: false, error: 'No application found' };
+    }
+
+    const doc = querySnapshot.docs[0];
+    return { 
+      success: true, 
+      data: { id: doc.id, ...doc.data() } 
+    };
+  } catch (error) {
+    console.error('❌ Error getting onboarding application:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Update onboarding application
+ * @param {string} applicationId - Application ID
+ * @param {Object} updates - Fields to update
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function updateOnboardingApplication(applicationId, updates) {
+  try {
+    const applicationRef = doc(db, 'onboardingApplications', applicationId);
+    await updateDoc(applicationRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log('✅ Onboarding application updated:', applicationId);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error updating onboarding application:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export default {
   createUserProfile,
   getUserProfile,
@@ -231,5 +312,8 @@ export default {
   getUserConversations,
   deleteConversation,
   deleteAllUserConversations,
+  createOnboardingApplication,
+  getOnboardingApplication,
+  updateOnboardingApplication,
 };
 
