@@ -5,40 +5,24 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
 import { Info, TrendingUp, TrendingDown, Minus } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
+import { useOnboarding } from "@/contexts/OnboardingContext"
 import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore"
 import { db } from "@/services/firebase/config"
-
-/**
- * Calculate trend from scores
- * @param {Array} scores - Array of score objects with value and date
- * @returns {string} Trend direction
- */
-function calculateTrend(scores) {
-  if (scores.length < 2) return "stable"
-  
-  const recent = scores.slice(-2)
-  const diff = recent[1].value - recent[0].value
-  
-  if (diff > 0) return "increasing"
-  if (diff < 0) return "decreasing"
-  return "stable"
-}
-
-/**
- * Format questionnaire type label
- */
-function formatTypeLabel(type) {
-  if (!type) return "Unknown"
-  return type
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, l => l.toUpperCase())
-}
+import { getOnboardingApplication } from "@/services/firebase/firestore"
+import { 
+  calculateQuestionnaireTrend, 
+  interpretScoreSeverity, 
+  getSeverityDisplay,
+  formatQuestionnaireType 
+} from "@/utils/questionnaireAnalysis"
 
 export function QuestionnaireHistorySummary() {
   const { user } = useAuth()
+  const { applicationId } = useOnboarding()
   const [questionnaires, setQuestionnaires] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -51,14 +35,28 @@ export function QuestionnaireHistorySummary() {
       }
 
       try {
-        // Query questionnaires for this user
-        // Note: In real implementation, we'd query by patientId linked to user
-        // For now, we'll query by userId if that field exists
+        // Get patientId from onboarding application
+        let patientId = null
+        
+        // Query for onboarding application to get patientId
+        const appResult = await getOnboardingApplication(user.uid)
+        if (appResult.success && appResult.data?.patientId) {
+          patientId = appResult.data.patientId
+        }
+
+        if (!patientId) {
+          // No patientId found - user hasn't completed onboarding yet
+          setQuestionnaires([])
+          setLoading(false)
+          return
+        }
+
+        // Query questionnaires by patientId
         const q = query(
           collection(db, 'questionnaires'),
-          where('userId', '==', user.uid),
-          orderBy('createdAt', 'desc'),
-          limit(5) // Get last 5 questionnaires
+          where('patientId', '==', patientId),
+          orderBy('completedAt', 'desc'),
+          limit(10) // Get last 10 questionnaires
         )
 
         const querySnapshot = await getDocs(q)
@@ -66,27 +64,83 @@ export function QuestionnaireHistorySummary() {
 
         querySnapshot.forEach((doc) => {
           const data = doc.data()
+          const typeCode = data.type || data.typeCode
+          const typeLabel = data.typeLabel || formatQuestionnaireType(typeCode)
+          const score = data.score !== null && data.score !== undefined ? data.score : null
+          const severity = score !== null ? interpretScoreSeverity(typeCode, score) : null
+          
           questionnaireData.push({
             id: doc.id,
-            type: data.type || data.typeLabel || 'Unknown',
-            typeLabel: data.typeLabel || formatTypeLabel(data.type),
-            score: data.score || null,
+            type: typeCode,
+            typeCode: data.typeCode,
+            typeLabel: typeLabel,
+            score: score,
+            severity: severity,
+            completedAt: data.completedAt?.toDate() || data.createdAt?.toDate() || new Date(),
             createdAt: data.createdAt?.toDate() || new Date(),
             typeMetadata: data.typeMetadata || {},
           })
         })
 
+        // Sort by completedAt date (most recent first)
+        questionnaireData.sort((a, b) => {
+          const dateA = a.completedAt || a.createdAt
+          const dateB = b.completedAt || b.createdAt
+          return dateB - dateA
+        })
+
         setQuestionnaires(questionnaireData)
       } catch (err) {
         console.error('Error loading questionnaires:', err)
-        setError(err.message)
+        // If orderBy fails (no index), try without it
+        if (err.code === 'failed-precondition') {
+          try {
+            const q = query(
+              collection(db, 'questionnaires'),
+              where('patientId', '==', patientId),
+              limit(10)
+            )
+            const querySnapshot = await getDocs(q)
+            const questionnaireData = []
+            querySnapshot.forEach((doc) => {
+              const data = doc.data()
+              const typeCode = data.type || data.typeCode
+              const typeLabel = data.typeLabel || formatQuestionnaireType(typeCode)
+              const score = data.score !== null && data.score !== undefined ? data.score : null
+              const severity = score !== null ? interpretScoreSeverity(typeCode, score) : null
+              
+              questionnaireData.push({
+                id: doc.id,
+                type: typeCode,
+                typeCode: data.typeCode,
+                typeLabel: typeLabel,
+                score: score,
+                severity: severity,
+                completedAt: data.completedAt?.toDate() || data.createdAt?.toDate() || new Date(),
+                createdAt: data.createdAt?.toDate() || new Date(),
+                typeMetadata: data.typeMetadata || {},
+              })
+            })
+            // Sort manually
+            questionnaireData.sort((a, b) => {
+              const dateA = a.completedAt || a.createdAt
+              const dateB = b.completedAt || b.createdAt
+              return dateB - dateA
+            })
+            setQuestionnaires(questionnaireData)
+          } catch (retryErr) {
+            setError(retryErr.message)
+          }
+        } else {
+          setError(err.message)
+        }
       } finally {
         setLoading(false)
       }
     }
 
     loadQuestionnaires()
-  }, [user])
+  }, [user, applicationId])
 
   if (loading) {
     return (
@@ -136,11 +190,12 @@ export function QuestionnaireHistorySummary() {
 
   // Get most recent questionnaire
   const mostRecent = questionnaires[0]
-  const trend = calculateTrend(questionnaires.map(q => ({ value: q.score || 0, date: q.createdAt })))
+  const trend = calculateQuestionnaireTrend(questionnaires)
   
-  // Get trend icon
-  const TrendIcon = trend === "increasing" ? TrendingUp : trend === "decreasing" ? TrendingDown : Minus
-  const trendColor = trend === "increasing" ? "text-destructive" : trend === "decreasing" ? "text-green-600" : "text-muted-foreground"
+  // Get trend icon and color
+  const TrendIcon = trend === "worsening" ? TrendingUp : trend === "improving" ? TrendingDown : Minus
+  const trendColor = trend === "worsening" ? "text-destructive" : trend === "improving" ? "text-green-600" : "text-muted-foreground"
+  const trendLabel = trend === "worsening" ? "Scores trending upward" : trend === "improving" ? "Scores trending downward" : "Scores stable"
 
   return (
     <Card className="border border-border shadow-lg">
@@ -158,12 +213,22 @@ export function QuestionnaireHistorySummary() {
             {mostRecent.score !== null && (
               <div className="text-right">
                 <p className="text-xs text-muted-foreground mb-1">Score</p>
-                <p className="font-semibold text-lg">{mostRecent.score}</p>
+                <div className="flex items-center gap-2 justify-end">
+                  <p className="font-semibold text-lg">{mostRecent.score}</p>
+                  {mostRecent.severity && (
+                    <Badge 
+                      variant="outline" 
+                      className={getSeverityDisplay(mostRecent.severity).color}
+                    >
+                      {getSeverityDisplay(mostRecent.severity).label}
+                    </Badge>
+                  )}
+                </div>
               </div>
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            {mostRecent.createdAt.toLocaleDateString()}
+            {(mostRecent.completedAt || mostRecent.createdAt).toLocaleDateString()}
           </p>
         </div>
 
@@ -171,9 +236,7 @@ export function QuestionnaireHistorySummary() {
           <div className="flex items-center gap-2 text-sm">
             <TrendIcon className={`h-4 w-4 ${trendColor}`} />
             <span className={trendColor}>
-              {trend === "increasing" && "Scores trending upward"}
-              {trend === "decreasing" && "Scores trending downward"}
-              {trend === "stable" && "Scores stable"}
+              {trendLabel}
             </span>
           </div>
         )}
@@ -184,11 +247,21 @@ export function QuestionnaireHistorySummary() {
             <div className="space-y-1">
               {questionnaires.slice(1, 4).map((q) => (
                 <div key={q.id} className="flex items-center justify-between text-sm p-2 bg-muted/20 rounded">
-                  <span>{q.typeLabel}</span>
+                  <div className="flex items-center gap-2">
+                    <span>{q.typeLabel}</span>
+                    {q.severity && (
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs ${getSeverityDisplay(q.severity).color}`}
+                      >
+                        {getSeverityDisplay(q.severity).label}
+                      </Badge>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2">
                     {q.score !== null && <span className="font-medium">{q.score}</span>}
                     <span className="text-xs text-muted-foreground">
-                      {q.createdAt.toLocaleDateString()}
+                      {(q.completedAt || q.createdAt).toLocaleDateString()}
                     </span>
                   </div>
                 </div>

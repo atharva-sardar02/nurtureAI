@@ -7,9 +7,67 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { CheckCircle2 } from "lucide-react"
 import { useOnboarding } from "@/contexts/OnboardingContext"
+import { ReferralInfo } from "@/components/referrals/ReferralInfo"
+import { useState, useEffect } from "react"
+import { useAuth } from "@/contexts/AuthContext"
+import { getOnboardingApplication } from "@/services/firebase/firestore"
+import { getPatientReferral } from "@/services/referrals/ReferralTracker"
 
 export function WelcomeScreen() {
-  const { nextStep, formData } = useOnboarding()
+  const { nextStep, formData, applicationId, updateFormData } = useOnboarding()
+  const { user } = useAuth()
+  const [referral, setReferral] = useState(null)
+  const [loadingReferral, setLoadingReferral] = useState(true)
+
+  useEffect(() => {
+    async function loadReferral() {
+      if (!user) {
+        setLoadingReferral(false)
+        return
+      }
+
+      try {
+        // Get patientId from onboarding application
+        const appResult = await getOnboardingApplication(user.uid)
+        if (appResult.success && appResult.data?.patientId) {
+          const patientId = appResult.data.patientId
+          
+          // Get referral information
+          const referralResult = await getPatientReferral(patientId)
+          if (referralResult.success && referralResult.referral) {
+            const referralData = referralResult.referral
+            
+            // Format referral info for storage
+            const formattedReferral = {
+              referralId: referralData.id,
+              sourceName: referralData.sourceName || referralData.referralData?.sourceName,
+              sourceType: referralData.source || referralData.referralData?.source,
+              organizationId: referralData.organizationId || referralData.referralData?.organizationId,
+              displayInOnboarding: referralData.displayInOnboarding !== false,
+            }
+            
+            setReferral(referralData)
+            
+            // Save to onboarding form data if not already set
+            if (!formData.referralInfo) {
+              updateFormData({ referralInfo: formattedReferral })
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading referral:', error)
+      } finally {
+        setLoadingReferral(false)
+      }
+    }
+
+    loadReferral()
+  }, [user, applicationId, formData.referralInfo, updateFormData])
+
+  // Get referral source name for welcome message
+  const referralSourceName = referral 
+    ? (referral.sourceName || referral.referralData?.sourceName || null)
+    : (formData.referralInfo?.sourceName || formData.referralInfo?.organizationName || null)
 
   return (
     <Card className="border border-border shadow-lg">
@@ -20,13 +78,18 @@ export function WelcomeScreen() {
         <div>
           <CardTitle className="text-2xl">Welcome to NurtureAI</CardTitle>
           <CardDescription className="text-base pt-2">
-            {formData.referralInfo 
-              ? `You've been referred by ${formData.referralInfo.organizationName || 'your organization'}. Let's get started with your onboarding.`
+            {referralSourceName
+              ? `You've been referred by ${referralSourceName}. Let's get started with your onboarding.`
               : "We're here to help you find the right mental health support for your child. Let's complete your profile to get started."}
           </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Show referral info if available */}
+        {referral && !loadingReferral && (
+          <ReferralInfo referral={referral} compact={true} />
+        )}
+
         <div className="bg-secondary/20 p-6 rounded-lg border border-secondary/30">
           <h4 className="font-semibold text-secondary mb-2">What's Next</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">

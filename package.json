@@ -94,6 +94,8 @@
     "test:insurance:integration": "node tests/integration/insuranceVerification.test.js",
     "test:ocr": "node tests/unit/InsuranceCalculator.test.js",
     "test:ocr:integration": "node tests/integration/ocrProcessing.test.js",
+    "test:questionnaires": "node tests/unit/questionnaireTrends.test.js",
+    "test:questionnaires:integration": "node tests/integration/questionnairesReferrals.test.js",
     "verify:env": "node scripts/verifyEnv.js",
     "kinship:validate": "node scripts/generateKinshipMapping.js validate",
     "kinship:export": "node scripts/generateKinshipMapping.js export"

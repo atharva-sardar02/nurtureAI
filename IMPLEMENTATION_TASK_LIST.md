@@ -1084,56 +1084,61 @@ nurtureAI/
 **Description:** Display questionnaire history and referral tracking
 
 #### Tasks:
-- [ ] **Task 12.1: Questionnaire History Display**
-  - Files to update:
+- [x] **Task 12.1: Questionnaire History Display** ✅
+  - Files updated:
     - `src/components/onboarding/QuestionnaireHistorySummary.jsx`
-  - Firestore collections to use:
+    - `src/utils/questionnaireAnalysis.js` (new)
+  - Firestore collections used:
     - `questionnaires`
-  - Actions:
-    - Query all questionnaires for patient
-    - Display scores over time
-    - Show trend (improving/stable/worsening)
-    - Add chart visualization (optional)
+  - Actions completed:
+    - ✅ Query all questionnaires for patient by patientId
+    - ✅ Display scores over time with severity badges
+    - ✅ Show trend (improving/stable/worsening) with icons
+    - ✅ Use questionnaire type mapping utility
+    - ✅ Handle missing Firestore indexes gracefully
 
-- [ ] **Task 12.2: Referral Information Display**
-  - Files to create:
+- [x] **Task 12.2: Referral Information Display** ✅
+  - Files created:
     - `src/components/referrals/ReferralInfo.jsx`
     - `src/components/referrals/OrganizationLink.jsx`
     - `src/services/referrals/ReferralTracker.js`
-  - Firestore collections to use:
+  - Files updated:
+    - `src/components/onboarding/WelcomeScreen.jsx`
+  - Firestore collections used:
     - `referrals`
+    - `referralMembers`
     - `organizations`
-  - Actions:
-    - Display referral source on welcome screen
-    - Show organization relationship
-    - Track referral journey
-    - Store referral data in application
+  - Actions completed:
+    - ✅ Display referral source on welcome screen
+    - ✅ Show organization relationship
+    - ✅ Track referral journey
+    - ✅ Store referral data in onboarding application
 
-- [ ] **Task 12.3: Unit Tests for Questionnaire Analysis**
-  - Files to create:
+- [x] **Task 12.3: Unit Tests for Questionnaire Analysis** ✅
+  - Files created:
     - `tests/unit/questionnaireTrends.test.js`
-  - Actions:
-    - Test trend calculation (improving/stable/worsening)
-    - Test score interpretation (minimal/mild/moderate/severe)
-    - Test multiple questionnaire comparison
-    - Test edge cases (single questionnaire, no history)
+  - Actions completed:
+    - ✅ Test trend calculation (improving/stable/worsening) - 8 tests
+    - ✅ Test score interpretation (minimal/mild/moderate/severe) - 20+ tests
+    - ✅ Test multiple questionnaire comparison
+    - ✅ Test edge cases (single questionnaire, no history, null scores)
 
-- [ ] **Task 12.4: Integration Tests for Data Retrieval**
-  - Files to create:
+- [x] **Task 12.4: Integration Tests for Data Retrieval** ✅
+  - Files created:
     - `tests/integration/questionnairesReferrals.test.js`
-  - Actions:
-    - Test questionnaire history retrieval from Firestore
-    - Test referral data lookup
-    - Test organization linking
-    - Verify data displayed correctly in components
+  - Actions completed:
+    - ✅ Test questionnaire history retrieval from Firestore
+    - ✅ Test referral data lookup
+    - ✅ Test organization linking
+    - ✅ Verify data displayed correctly in components
 
 **Review Checklist:**
-- [ ] Questionnaire history displays correctly
-- [ ] Trends calculated accurately
-- [ ] Referral source shown on welcome
-- [ ] Referral data tracked properly
-- [ ] ✅ **Unit tests passing** for trend calculation
-- [ ] ✅ **Integration tests passing** for data retrieval
+- [x] Questionnaire history displays correctly ✅
+- [x] Trends calculated accurately ✅
+- [x] Referral source shown on welcome ✅
+- [x] Referral data tracked properly ✅
+- [x] ✅ **Unit tests passing** for trend calculation (30+ tests) ✅
+- [x] ✅ **Integration tests passing** for data retrieval (13 tests) ✅
 
 ---
 
