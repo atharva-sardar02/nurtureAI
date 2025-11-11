@@ -82,6 +82,10 @@
     "seed:database": "node scripts/seedDatabase.js",
     "seed:dry-run": "node scripts/seedDatabase.js --dry-run",
     "validate:data": "node scripts/validateDataRunner.js",
+    "test:assessment": "node tests/unit/AssessmentEngine.test.js",
+    "test:crisis": "node tests/unit/CrisisDetection.test.js",
+    "test:aichat": "node tests/integration/aiChat.test.js",
+    "test:ai": "npm run test:assessment && npm run test:crisis && npm run test:aichat",
     "kinship:validate": "node scripts/generateKinshipMapping.js validate",
     "kinship:export": "node scripts/generateKinshipMapping.js export"
   },
