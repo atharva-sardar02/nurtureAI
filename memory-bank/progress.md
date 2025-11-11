@@ -99,8 +99,7 @@
 - [x] Store conversations in Firestore with 90-day TTL
 - [x] Create assessment summary page
 - [x] Add conversation management functions
-- [ ] Add crisis detection
-- [ ] Write unit and integration tests
+- [ ] Write unit and integration tests (deferred to PR #15)
 
 ### PR #7: RAG Enhancement Layer
 - [ ] Set up Pinecone
