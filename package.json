@@ -98,6 +98,12 @@
     "test:questionnaires:integration": "node tests/integration/questionnairesReferrals.test.js",
     "test:support": "node tests/unit/supportChat.test.js",
     "test:support:integration": "node tests/integration/supportChat.test.js",
+    "test:dateHelpers": "node tests/unit/dateHelpers.test.js",
+    "test:constants": "node tests/unit/constants.test.js",
+    "test:all": "node scripts/runAllTests.js",
+    "test:unit": "node scripts/runAllTests.js --unit",
+    "test:integration": "node scripts/runAllTests.js --integration",
+    "test:coverage": "node scripts/runAllTests.js --coverage",
     "verify:env": "node scripts/verifyEnv.js",
     "kinship:validate": "node scripts/generateKinshipMapping.js validate",
     "kinship:export": "node scripts/generateKinshipMapping.js export"
