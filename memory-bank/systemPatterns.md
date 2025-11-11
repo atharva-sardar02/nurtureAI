@@ -63,7 +63,10 @@
 - `patients` - Patient demographics and relationships
 - `onboardingApplications` - Onboarding form data and status
 - `conversations` - AI chat history (90-day TTL)
-- `appointments` - Scheduled appointments
+- `appointments` - Scheduled appointments (linked to patients, clinicians, availability slots)
+- `clinicianAvailabilities` - Available time slots for clinicians (with isBooked flag)
+- `clinicianCredentialedInsurances` - Junction table linking clinicians to accepted insurances
+- `credentialedInsurances` - Insurance provider data
 - `insuranceCoverages` - Insurance plan details
 - `questionnaires` - Assessment questionnaire history
 - `referrals` - Referral source tracking
@@ -96,12 +99,15 @@
 6. Return to user
 
 **Scheduling Pattern:**
-1. Query clinicians by insurance acceptance
-2. Filter by availability slots
-3. Match with patient availability
-4. Rank by fit score
-5. Display results
-6. Create appointment document on selection
+1. Load patient data from onboarding application (insurance, preferences)
+2. Query clinicians by insurance acceptance via junction table
+3. Get availability slots for each clinician (date range query)
+4. Calculate fit score (insurance: 40pts, availability: 30pts, specialty: 20pts, rating: 10pts)
+5. Filter out clinicians with no availability
+6. Rank by fit score (highest first)
+7. Display results with available slots grouped by date
+8. On selection: Create appointment document + mark slot as booked
+9. Prevent double-booking by checking slot status before creation
 
 ---
 
@@ -254,6 +260,6 @@
 
 ---
 
-**Last Updated:** 2025-11-10  
-**Status:** Active Development - PR #1 in progress (60% complete)
+**Last Updated:** 2025-01-XX (after PR #10 completion)  
+**Status:** Active Development - PR #10 complete, ready for PR #11
 

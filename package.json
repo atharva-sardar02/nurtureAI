@@ -90,6 +90,8 @@
     "test:onboarding:integration": "node tests/integration/onboarding.test.js",
     "test:scheduling": "node tests/unit/ClinicianMatcher.test.js && node tests/unit/availabilityFiltering.test.js",
     "test:scheduling:integration": "node tests/integration/scheduling.test.js",
+    "test:insurance": "node tests/unit/InsuranceValidator.test.js && node tests/unit/InsuranceMatcher.test.js",
+    "test:insurance:integration": "node tests/integration/insuranceVerification.test.js",
     "verify:env": "node scripts/verifyEnv.js",
     "kinship:validate": "node scripts/generateKinshipMapping.js validate",
     "kinship:export": "node scripts/generateKinshipMapping.js export"
