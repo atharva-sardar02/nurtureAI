@@ -10,6 +10,8 @@ import { LandingPage } from '@/pages/LandingPage';
 import { Landing } from '@/pages/Landing';
 import { AssessmentPage } from '@/pages/Assessment';
 import { OnboardingPage } from '@/pages/Onboarding';
+import Scheduling from '@/pages/Scheduling';
+import Confirmation from '@/pages/Confirmation';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 /**
@@ -47,6 +49,22 @@ export function Routes() {
             element={
               <ProtectedRoute>
                 <OnboardingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/scheduling"
+            element={
+              <ProtectedRoute>
+                <Scheduling />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/confirmation/:appointmentId"
+            element={
+              <ProtectedRoute>
+                <Confirmation />
               </ProtectedRoute>
             }
           />
