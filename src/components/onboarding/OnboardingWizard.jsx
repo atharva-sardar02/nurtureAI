@@ -68,7 +68,6 @@ export function OnboardingWizard() {
         return <DemographicInfo />
       case ONBOARDING_STEPS.CONTACT:
         return <ContactInfo />
-      case ONBOARDING_STEPS.KINSHIP:
       case ONBOARDING_STEPS.CONSENT:
         return <ConsentForm />
       case ONBOARDING_STEPS.INSURANCE:

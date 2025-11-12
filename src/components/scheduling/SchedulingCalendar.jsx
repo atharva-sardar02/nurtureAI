@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from "react"
-import { useScheduling } from "@/hooks/useScheduling"
+import { useScheduling } from "@/hooks/useSchedulingNew"
 import { ClinicianCard } from "./ClinicianCard"
 import { TimeSlotSelector } from "./TimeSlotSelector"
 import { Button } from "@/components/ui/button"
@@ -12,8 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { LoadingSpinner } from "@/components/common/LoadingSpinner"
 import { useNavigate } from "react-router-dom"
-import { Calendar, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Calendar, AlertCircle, CheckCircle2, Clock, User, X } from "lucide-react"
 import { EmptyState } from "@/components/common/EmptyState"
+import { Badge } from "@/components/ui/badge"
 
 export function SchedulingCalendar() {
   const navigate = useNavigate();
@@ -24,14 +25,19 @@ export function SchedulingCalendar() {
     loading,
     error,
     patientData,
+    existingAppointments,
+    activeAppointment,
+    appointmentsWithClinicians,
     searchClinicians,
     selectClinician,
     selectSlot,
     bookAppointment,
+    cancelExistingAppointment,
   } = useScheduling();
 
   const [booking, setBooking] = useState(false);
   const [bookingError, setBookingError] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
 
   // Load clinicians on mount
   useEffect(() => {
@@ -51,6 +57,11 @@ export function SchedulingCalendar() {
       return;
     }
 
+    if (activeAppointment) {
+      setBookingError("You already have an active appointment. Please cancel it before booking a new one.");
+      return;
+    }
+
     setBooking(true);
     setBookingError(null);
 
@@ -66,6 +77,61 @@ export function SchedulingCalendar() {
       setBookingError(err.message || "An error occurred");
     } finally {
       setBooking(false);
+    }
+  };
+
+  const handleCancelAppointment = async (appointmentId) => {
+    if (!confirm("Are you sure you want to cancel this appointment?")) {
+      return;
+    }
+
+    setCancelling(true);
+    try {
+      const result = await cancelExistingAppointment(appointmentId);
+      if (!result.success) {
+        setBookingError(result.error || "Failed to cancel appointment");
+      }
+    } catch (err) {
+      setBookingError(err.message || "An error occurred");
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const formatAppointmentDate = (dateTime) => {
+    if (!dateTime) return 'Date TBD';
+    const date = dateTime.toDate ? dateTime.toDate() : new Date(dateTime);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const formatAppointmentTime = (dateTime) => {
+    if (!dateTime) return 'Time TBD';
+    const date = dateTime.toDate ? dateTime.toDate() : new Date(dateTime);
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const getStatusBadgeVariant = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'default';
+      case 'confirmed':
+      case 'scheduled':
+        return 'default';
+      case 'cancelled':
+        return 'secondary';
+      case 'completed':
+        return 'outline';
+      default:
+        return 'default';
     }
   };
 
@@ -112,11 +178,106 @@ export function SchedulingCalendar() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8 sm:mb-12">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">Schedule Your First Appointment</h1>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
+            {activeAppointment ? 'Your Appointments' : 'Schedule Your Appointment'}
+          </h1>
           <p className="text-base sm:text-lg text-muted-foreground">
-            Select a clinician and time that works best for your family
+            {activeAppointment 
+              ? 'Manage your appointments and schedule new ones'
+              : 'Select a clinician and time that works best for your family'}
           </p>
         </div>
+
+        {/* Active Appointment Alert */}
+        {activeAppointment && (
+          <Alert className="mb-6 border-primary/20 bg-primary/5">
+            <AlertCircle className="h-4 w-4 text-primary" />
+            <AlertDescription className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex-1">
+                <p className="font-semibold mb-1">You have an active appointment</p>
+                <p className="text-sm">
+                  Please complete or cancel your current appointment before booking a new one.
+                </p>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Existing Appointments Section */}
+        {(appointmentsWithClinicians.length > 0 || existingAppointments.length > 0) && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-semibold mb-6">Your Appointments</h2>
+            <div className="space-y-4">
+              {(appointmentsWithClinicians.length > 0 ? appointmentsWithClinicians : existingAppointments).map((appointment) => {
+                // Use clinician name if available, otherwise use clinicianId
+                const clinicianName = appointment.clinicianName || 'Clinician';
+                const isActive = appointment.id === activeAppointment?.id;
+                const isPast = appointment.dateTime && 
+                  (appointment.dateTime.toDate ? appointment.dateTime.toDate() : new Date(appointment.dateTime)) < new Date();
+                
+                return (
+                  <Card 
+                    key={appointment.id} 
+                    className={isActive ? "border-primary shadow-md" : ""}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between flex-wrap gap-4">
+                        <div className="flex-1">
+                          <CardTitle className="flex items-center gap-2 mb-2">
+                            <Calendar className="w-5 h-5 text-primary" />
+                            Appointment Details
+                          </CardTitle>
+                          <CardDescription>
+                            {formatAppointmentDate(appointment.dateTime)} at {formatAppointmentTime(appointment.dateTime)}
+                          </CardDescription>
+                        </div>
+                        <Badge variant={getStatusBadgeVariant(appointment.status)}>
+                          {appointment.status || 'pending'}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-semibold">Clinician</p>
+                            <p className="text-sm text-muted-foreground">
+                              {appointment.clinicianName || 'Loading...'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-semibold">Status</p>
+                            <p className="text-sm text-muted-foreground capitalize">
+                              {appointment.status || 'Pending'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {isActive && !isPast && (
+                        <div className="pt-4 border-t">
+                          <Button
+                            variant="outline"
+                            onClick={() => handleCancelAppointment(appointment.id)}
+                            disabled={cancelling}
+                            className="w-full sm:w-auto"
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            {cancelling ? "Cancelling..." : "Cancel Appointment"}
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Error Alert */}
         {(error || bookingError) && (
@@ -126,9 +287,10 @@ export function SchedulingCalendar() {
           </Alert>
         )}
 
-        {/* Clinician Selection */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-semibold mb-6">Available Clinicians</h2>
+        {/* Clinician Selection - Only show if no active appointment */}
+        {!activeAppointment && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-semibold mb-6">Available Clinicians</h2>
           {clinicians.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="py-12 text-center">
@@ -152,10 +314,11 @@ export function SchedulingCalendar() {
               ))}
             </div>
           )}
-        </div>
+          </div>
+        )}
 
-        {/* Instructions */}
-        {!selectedClinician && clinicians.length > 0 && (
+        {/* Instructions - Only show if no active appointment */}
+        {!activeAppointment && !selectedClinician && clinicians.length > 0 && (
           <Card className="mb-8 border-primary/20 bg-primary/5">
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">
@@ -173,8 +336,8 @@ export function SchedulingCalendar() {
           </Card>
         )}
 
-        {/* Time Slot Selection */}
-        {selectedClinician && (
+        {/* Time Slot Selection - Only show if no active appointment */}
+        {!activeAppointment && selectedClinician && (
           <div className="mb-8">
             <TimeSlotSelector
               slots={availableSlots}
@@ -194,8 +357,8 @@ export function SchedulingCalendar() {
           </div>
         )}
 
-        {/* Booking Confirmation */}
-        {selectedClinician && selectedSlot && (
+        {/* Booking Confirmation - Only show if no active appointment */}
+        {!activeAppointment && selectedClinician && selectedSlot && (
           <Card className="border-primary">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -235,7 +398,7 @@ export function SchedulingCalendar() {
               <Button
                 className="w-full"
                 onClick={handleBookAppointment}
-                disabled={booking}
+                disabled={booking || activeAppointment}
                 size="lg"
               >
                 {booking ? "Booking..." : "Confirm Appointment"}

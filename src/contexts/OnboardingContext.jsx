@@ -32,8 +32,7 @@ export const ONBOARDING_STEPS = {
   WELCOME: 'welcome',
   DEMOGRAPHICS: 'demographics',
   CONTACT: 'contact',
-  KINSHIP: 'kinship',
-  CONSENT: 'consent',
+  CONSENT: 'consent', // Combined kinship and consent
   INSURANCE: 'insurance',
   QUESTIONNAIRE_HISTORY: 'questionnaire_history', // Optional - doesn't block if no history
   REVIEW: 'review',
@@ -408,7 +407,6 @@ export function OnboardingProvider({ children }) {
         break;
 
       case ONBOARDING_STEPS.CONSENT:
-      case ONBOARDING_STEPS.KINSHIP:
         if (!formData.kinship) {
           errors.kinship = 'Relationship to child is required';
         }

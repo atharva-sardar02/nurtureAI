@@ -136,7 +136,7 @@ export function InsuranceForm({
                 <SelectTrigger id="provider" className={errors.provider ? 'border-destructive' : ''}>
                   <SelectValue placeholder="Select your insurance provider" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[300px] overflow-y-auto">
                   {providers.map((provider) => (
                     <SelectItem key={provider.id} value={provider.id}>
                       {provider.name}

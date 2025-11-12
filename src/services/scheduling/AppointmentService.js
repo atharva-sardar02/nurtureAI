@@ -101,11 +101,10 @@ export async function getAppointment(appointmentId) {
  */
 export async function getUserAppointments(userId) {
   try {
-    // Get user's onboarding application to find patientId
+    // Get user's onboarding application to find applicationId and patientId
     const applicationsQuery = query(
       collection(db, 'onboardingApplications'),
-      where('userId', '==', userId),
-      where('status', '==', 'complete')
+      where('userId', '==', userId)
     );
     
     const applicationsSnapshot = await getDocs(applicationsQuery);
@@ -114,19 +113,16 @@ export async function getUserAppointments(userId) {
     }
     
     const application = applicationsSnapshot.docs[0].data();
+    const applicationId = applicationsSnapshot.docs[0].id;
     const patientId = application.patientId;
     
-    if (!patientId) {
-      return { success: true, appointments: [] };
-    }
-    
-    // Get appointments for this patient
-    const appointmentsQuery = query(
+    // Get appointments by applicationId (more reliable than patientId which might not exist yet)
+    const appointmentsByApplicationQuery = query(
       collection(db, 'appointments'),
-      where('patientId', '==', patientId)
+      where('applicationId', '==', applicationId)
     );
     
-    const appointmentsSnapshot = await getDocs(appointmentsQuery);
+    const appointmentsSnapshot = await getDocs(appointmentsByApplicationQuery);
     const appointments = [];
     
     appointmentsSnapshot.forEach((doc) => {
@@ -135,6 +131,26 @@ export async function getUserAppointments(userId) {
         ...doc.data(),
       });
     });
+    
+    // Also get appointments by patientId if it exists (for backwards compatibility)
+    if (patientId) {
+      const appointmentsByPatientQuery = query(
+        collection(db, 'appointments'),
+        where('patientId', '==', patientId)
+      );
+      
+      const patientAppointmentsSnapshot = await getDocs(appointmentsByPatientQuery);
+      const existingIds = new Set(appointments.map(apt => apt.id));
+      
+      patientAppointmentsSnapshot.forEach((doc) => {
+        if (!existingIds.has(doc.id)) {
+          appointments.push({
+            id: doc.id,
+            ...doc.data(),
+          });
+        }
+      });
+    }
     
     return { success: true, appointments };
   } catch (error) {

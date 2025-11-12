@@ -58,16 +58,23 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // Insurance coverages - guardian access only
+    // Insurance coverages - read by authenticated users (for verification), write by guardians only
     match /insuranceCoverages/{coverageId} {
-      allow read, write: if isAuthenticated() && 
-                          request.auth.uid in get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians;
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && 
+                    request.auth.uid in get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians;
     }
     
     // Clinician availabilities - read by authenticated users (for scheduling)
     match /clinicianAvailabilities/{availabilityId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      // Allow updating booking status when creating an appointment
+      allow update: if isAuthenticated() && 
+                     // Ensure only booking-related fields can be updated
+                     request.resource.data.careProviderProfileId == resource.data.careProviderProfileId &&
+                     request.resource.data.rangestart == resource.data.rangestart &&
+                     request.resource.data.rangeend == resource.data.rangeend;
+      allow create, delete: if isAdmin();
     }
     
     // Clinician credentialed insurances - read by authenticated users (for matching)
@@ -102,14 +109,30 @@ service cloud.firestore {
     
     // Appointments - accessible to patient guardian and assigned clinician
     match /appointments/{appointmentId} {
+      // Allow creating appointments for authenticated users
+      allow create: if isAuthenticated() && 
+                     request.resource.data.keys().hasAll(['clinicianId', 'dateTime', 'status']);
+      
+      // Allow reading appointments if user is the clinician or has access via onboarding application
       allow read: if isAuthenticated() && (
         request.auth.uid == resource.data.clinicianId ||
-        request.auth.uid in get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians
+        // Check if user owns the onboarding application
+        (resource.data.applicationId != null && 
+         get(/databases/$(database)/documents/onboardingApplications/$(resource.data.applicationId)).data.userId == request.auth.uid) ||
+        // Or if patientId exists and user is a guardian (with null check)
+        (resource.data.patientId != null && 
+         exists(/databases/$(database)/documents/patients/$(resource.data.patientId)) &&
+         request.auth.uid in get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians)
       );
-      allow create: if isAuthenticated();
+      
+      // Allow updating appointments if user is the clinician or owns the application
       allow update: if isAuthenticated() && (
         request.auth.uid == resource.data.clinicianId ||
-        request.auth.uid in get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians
+        (resource.data.applicationId != null && 
+         get(/databases/$(database)/documents/onboardingApplications/$(resource.data.applicationId)).data.userId == request.auth.uid) ||
+        (resource.data.patientId != null && 
+         exists(/databases/$(database)/documents/patients/$(resource.data.patientId)) &&
+         request.auth.uid in get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians)
       );
     }
     

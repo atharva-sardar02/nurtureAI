@@ -4,19 +4,25 @@
  */
 
 import { useState, useRef, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Send, Loader2 } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
+import { Send, Loader2, CheckCircle2 } from "lucide-react"
 import { MessageBubble } from "./MessageBubble"
 import { CrisisDetection } from "./CrisisDetection"
 import { useChat } from "@/hooks/useChat"
 
 export function ChatInterface() {
+  const navigate = useNavigate()
   const {
     messages,
     isLoading,
     error,
     crisisDetected,
+    progress,
+    currentPhase,
+    isComplete,
     sendMessage,
   } = useChat()
   const [input, setInput] = useState("")
@@ -40,7 +46,7 @@ export function ChatInterface() {
   }, [messages])
 
   const handleSendMessage = async () => {
-    if (!input.trim() || isLoading) return
+    if (!input.trim() || isLoading || isComplete) return
 
     const message = input.trim()
     setInput("")
@@ -54,8 +60,27 @@ export function ChatInterface() {
     }
   }
 
+  const handleContinueToOnboarding = () => {
+    navigate("/assessment")
+  }
+
   return (
     <div className="flex flex-col h-full bg-background" role="main" aria-label="Chat interface">
+      {/* Progress Bar */}
+      {progress > 0 && !isComplete && (
+        <div className="px-4 sm:px-6 pt-4 pb-2 border-b border-border bg-muted/30">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              Assessment Progress
+            </span>
+            <span className="text-xs font-semibold text-primary">
+              {progress}%
+            </span>
+          </div>
+          <Progress value={progress} className="h-2" />
+        </div>
+      )}
+
       {/* Crisis Detection Alert */}
       {showCrisisAlert && (
         <div className="p-3 sm:p-4 border-b border-destructive/20" role="alert" aria-live="assertive">
@@ -116,35 +141,60 @@ export function ChatInterface() {
 
       {/* Input Area */}
       <div className="border-t border-border p-4 sm:p-6 bg-muted/30 flex-shrink-0">
-        <div className="flex gap-2">
-          <Input
-            placeholder="Share your thoughts here..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            disabled={isLoading}
-            className="text-sm min-h-[44px] sm:min-h-[40px]"
-            aria-label="Message input"
-            aria-describedby="chat-input-help"
-          />
-          <Button
-            size="icon"
-            onClick={handleSendMessage}
-            disabled={!input.trim() || isLoading}
-            className="bg-primary hover:bg-primary/90 min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] transition-all duration-200"
-            aria-label="Send message"
-          >
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <Send className="w-4 h-4" aria-hidden="true" />
-            )}
-          </Button>
-        </div>
-        <p id="chat-input-help" className="text-xs text-muted-foreground mt-2">
-          This conversation is confidential and will be reviewed by our clinical
-          team.
-        </p>
+        {isComplete ? (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+              <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" aria-hidden="true" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-primary mb-1">
+                  Assessment Complete
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Thank you for completing the assessment. Your responses have been saved and will be reviewed by our clinical team.
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={handleContinueToOnboarding}
+              className="w-full bg-primary hover:bg-primary/90"
+              size="lg"
+            >
+              Continue to Onboarding
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Share your thoughts here..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                disabled={isLoading || isComplete}
+                className="text-sm min-h-[44px] sm:min-h-[40px]"
+                aria-label="Message input"
+                aria-describedby="chat-input-help"
+              />
+              <Button
+                size="icon"
+                onClick={handleSendMessage}
+                disabled={!input.trim() || isLoading || isComplete}
+                className="bg-primary hover:bg-primary/90 min-w-[44px] min-h-[44px] sm:min-w-[40px] sm:min-h-[40px] transition-all duration-200"
+                aria-label="Send message"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Send className="w-4 h-4" aria-hidden="true" />
+                )}
+              </Button>
+            </div>
+            <p id="chat-input-help" className="text-xs text-muted-foreground mt-2">
+              This conversation is confidential and will be reviewed by our clinical
+              team.
+            </p>
+          </>
+        )}
       </div>
     </div>
   )

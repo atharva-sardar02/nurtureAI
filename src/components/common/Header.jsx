@@ -4,7 +4,7 @@
  */
 
 import { Button } from "@/components/ui/button"
-import { LogOut, Menu, Home, FileText, UserPlus, Calendar, MessageCircle } from "lucide-react"
+import { LogOut, Menu, Home, FileText, UserPlus, Calendar, MessageCircle, BarChart3 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useState } from "react"
@@ -112,6 +112,20 @@ export function Header({ title = "NurtureAI" }) {
                    >
                      <MessageCircle className="w-4 h-4" aria-hidden="true" />
                      Support
+                   </button>
+                   <button
+                     onClick={() => navigate("/admin")}
+                     className={cn(
+                       "text-sm font-medium transition-colors flex items-center gap-2 min-h-[44px] px-2 rounded-md hover:bg-muted/50",
+                       isActive("/admin")
+                         ? "text-foreground"
+                         : "text-muted-foreground hover:text-foreground"
+                     )}
+                     aria-label="Navigate to admin dashboard"
+                     aria-current={isActive("/admin") ? "page" : undefined}
+                   >
+                     <BarChart3 className="w-4 h-4" aria-hidden="true" />
+                     Admin
                    </button>
               <span className="text-sm text-muted-foreground">
                 {user.email}
@@ -245,6 +259,24 @@ export function Header({ title = "NurtureAI" }) {
               >
                 <MessageCircle className="w-4 h-4" aria-hidden="true" />
                 Support
+              </button>
+              <button
+                onClick={() => {
+                  navigate("/admin")
+                  setMobileMenuOpen(false)
+                }}
+                className={cn(
+                  "text-sm font-medium transition-colors text-left flex items-center gap-2 min-h-[44px] px-4 rounded-md hover:bg-muted/50",
+                  isActive("/admin") 
+                    ? "text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                role="menuitem"
+                aria-label="Navigate to admin dashboard"
+                aria-current={isActive("/admin") ? "page" : undefined}
+              >
+                <BarChart3 className="w-4 h-4" aria-hidden="true" />
+                Admin
               </button>
               <div className="text-sm text-muted-foreground pt-2 border-t border-border">
                 {user.email}

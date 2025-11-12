@@ -9,11 +9,13 @@ import { LoginPage } from '@/pages/LoginPage';
 import { LandingPage } from '@/pages/LandingPage';
 import { Landing } from '@/pages/Landing';
 import { AssessmentPage } from '@/pages/Assessment';
+import { ChatPage } from '@/pages/Chat';
 import { OnboardingPage } from '@/pages/Onboarding';
 import Scheduling from '@/pages/Scheduling';
 import Confirmation from '@/pages/Confirmation';
 import { SupportPage } from '@/pages/Support';
 import { SupportDashboardPage } from '@/pages/SupportDashboard';
+import { AdminDashboardPage } from '@/pages/AdminDashboard';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 /**
@@ -22,7 +24,12 @@ import { AuthProvider } from '@/contexts/AuthContext';
  */
 export function Routes() {
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <AuthProvider>
         <RouterRoutes>
           {/* Public routes */}
@@ -43,6 +50,14 @@ export function Routes() {
             element={
               <ProtectedRoute>
                 <AssessmentPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute>
+                <ChatPage />
               </ProtectedRoute>
             }
           />
@@ -83,6 +98,14 @@ export function Routes() {
             element={
               <ProtectedRoute>
                 <SupportDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminDashboardPage />
               </ProtectedRoute>
             }
           />

@@ -5,8 +5,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { getAppointment } from "@/services/scheduling/AppointmentService"
-import { getClinicianById } from "@/services/scheduling/ClinicianMatcher"
+import { getAppointment } from "@/services/scheduling"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -40,8 +39,9 @@ export function AppointmentConfirmation() {
       const appointmentData = appointmentResult.data;
       setAppointment(appointmentData);
 
-      // Get clinician details
+      // Get clinician details (using dynamic import to avoid circular dependency)
       if (appointmentData.clinicianId) {
+        const { getClinicianById } = await import('@/services/scheduling');
         const clinicianData = await getClinicianById(appointmentData.clinicianId);
         setClinician(clinicianData);
       }

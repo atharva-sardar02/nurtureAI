@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useOnboarding } from "@/contexts/OnboardingContext"
 import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore"
 import { db } from "@/services/firebase/config"
-import { getOnboardingApplication } from "@/services/firebase/firestore"
+import { getOnboardingApplication, getUserConversations } from "@/services/firebase/firestore"
 import { 
   calculateQuestionnaireTrend, 
   interpretScoreSeverity, 
@@ -35,73 +35,25 @@ export function QuestionnaireHistorySummary() {
       }
 
       try {
+        const questionnaireData = []
+        
         // Get patientId from onboarding application
         let patientId = null
-        
-        // Query for onboarding application to get patientId
         const appResult = await getOnboardingApplication(user.uid)
         if (appResult.success && appResult.data?.patientId) {
           patientId = appResult.data.patientId
         }
 
-        if (!patientId) {
-          // No patientId found - user hasn't completed onboarding yet
-          setQuestionnaires([])
-          setLoading(false)
-          return
-        }
-
-        // Query questionnaires by patientId
-        const q = query(
-          collection(db, 'questionnaires'),
-          where('patientId', '==', patientId),
-          orderBy('completedAt', 'desc'),
-          limit(10) // Get last 10 questionnaires
-        )
-
-        const querySnapshot = await getDocs(q)
-        const questionnaireData = []
-
-        querySnapshot.forEach((doc) => {
-          const data = doc.data()
-          const typeCode = data.type || data.typeCode
-          const typeLabel = data.typeLabel || formatQuestionnaireType(typeCode)
-          const score = data.score !== null && data.score !== undefined ? data.score : null
-          const severity = score !== null ? interpretScoreSeverity(typeCode, score) : null
-          
-          questionnaireData.push({
-            id: doc.id,
-            type: typeCode,
-            typeCode: data.typeCode,
-            typeLabel: typeLabel,
-            score: score,
-            severity: severity,
-            completedAt: data.completedAt?.toDate() || data.createdAt?.toDate() || new Date(),
-            createdAt: data.createdAt?.toDate() || new Date(),
-            typeMetadata: data.typeMetadata || {},
-          })
-        })
-
-        // Sort by completedAt date (most recent first)
-        questionnaireData.sort((a, b) => {
-          const dateA = a.completedAt || a.createdAt
-          const dateB = b.completedAt || b.createdAt
-          return dateB - dateA
-        })
-
-        setQuestionnaires(questionnaireData)
-      } catch (err) {
-        console.error('Error loading questionnaires:', err)
-        // If orderBy fails (no index), try without it
-        if (err.code === 'failed-precondition') {
+        // Load questionnaires from questionnaires collection
+        if (patientId) {
           try {
             const q = query(
               collection(db, 'questionnaires'),
               where('patientId', '==', patientId),
+              orderBy('completedAt', 'desc'),
               limit(10)
             )
             const querySnapshot = await getDocs(q)
-            const questionnaireData = []
             querySnapshot.forEach((doc) => {
               const data = doc.data()
               const typeCode = data.type || data.typeCode
@@ -119,21 +71,117 @@ export function QuestionnaireHistorySummary() {
                 completedAt: data.completedAt?.toDate() || data.createdAt?.toDate() || new Date(),
                 createdAt: data.createdAt?.toDate() || new Date(),
                 typeMetadata: data.typeMetadata || {},
+                source: 'questionnaire',
               })
             })
-            // Sort manually
-            questionnaireData.sort((a, b) => {
-              const dateA = a.completedAt || a.createdAt
-              const dateB = b.completedAt || b.createdAt
-              return dateB - dateA
-            })
-            setQuestionnaires(questionnaireData)
-          } catch (retryErr) {
-            setError(retryErr.message)
+          } catch (err) {
+            // If orderBy fails (no index), try without it
+            if (err.code === 'failed-precondition') {
+              try {
+                const q = query(
+                  collection(db, 'questionnaires'),
+                  where('patientId', '==', patientId),
+                  limit(10)
+                )
+                const querySnapshot = await getDocs(q)
+                querySnapshot.forEach((doc) => {
+                  const data = doc.data()
+                  const typeCode = data.type || data.typeCode
+                  const typeLabel = data.typeLabel || formatQuestionnaireType(typeCode)
+                  const score = data.score !== null && data.score !== undefined ? data.score : null
+                  const severity = score !== null ? interpretScoreSeverity(typeCode, score) : null
+                  
+                  questionnaireData.push({
+                    id: doc.id,
+                    type: typeCode,
+                    typeCode: data.typeCode,
+                    typeLabel: typeLabel,
+                    score: score,
+                    severity: severity,
+                    completedAt: data.completedAt?.toDate() || data.createdAt?.toDate() || new Date(),
+                    createdAt: data.createdAt?.toDate() || new Date(),
+                    typeMetadata: data.typeMetadata || {},
+                    source: 'questionnaire',
+                  })
+                })
+              } catch (retryErr) {
+                console.error('Error loading questionnaires:', retryErr)
+              }
+            }
           }
-        } else {
-          setError(err.message)
         }
+
+        // Load assessment data from conversations
+        try {
+          const convResult = await getUserConversations(user.uid, 10)
+          if (convResult.success && convResult.conversations) {
+            convResult.conversations.forEach((conv) => {
+              if (conv.assessmentData && conv.assessmentData.completed) {
+                const assessment = conv.assessmentData
+                const completedAt = conv.createdAt?.toDate?.() || new Date(conv.createdAt) || new Date()
+                
+                // Create entries for PHQ-A and GAD-7 scores if available
+                if (assessment.phqScore !== null && assessment.phqScore !== undefined) {
+                  questionnaireData.push({
+                    id: `assessment-phq-${conv.id}`,
+                    type: 'PHQ-A',
+                    typeCode: 'PHQ-A',
+                    typeLabel: 'PHQ-A (Depression)',
+                    score: assessment.phqScore,
+                    severity: assessment.severity || null,
+                    completedAt: completedAt,
+                    createdAt: completedAt,
+                    source: 'assessment',
+                    assessmentData: {
+                      extractedIssues: assessment.extractedIssues || [],
+                      childAge: assessment.childAge,
+                      functionalImpact: assessment.functionalImpact,
+                      duration: assessment.duration,
+                      crisisDetected: assessment.crisisDetected,
+                      suitability: assessment.suitability,
+                    },
+                  })
+                }
+                
+                if (assessment.gadScore !== null && assessment.gadScore !== undefined) {
+                  questionnaireData.push({
+                    id: `assessment-gad-${conv.id}`,
+                    type: 'GAD-7',
+                    typeCode: 'GAD-7',
+                    typeLabel: 'GAD-7 (Anxiety)',
+                    score: assessment.gadScore,
+                    severity: assessment.severity || null,
+                    completedAt: completedAt,
+                    createdAt: completedAt,
+                    source: 'assessment',
+                    assessmentData: {
+                      extractedIssues: assessment.extractedIssues || [],
+                      childAge: assessment.childAge,
+                      functionalImpact: assessment.functionalImpact,
+                      duration: assessment.duration,
+                      crisisDetected: assessment.crisisDetected,
+                      suitability: assessment.suitability,
+                    },
+                  })
+                }
+              }
+            })
+          }
+        } catch (err) {
+          console.error('Error loading assessment data from conversations:', err)
+        }
+
+        // Sort by completedAt date (most recent first)
+        questionnaireData.sort((a, b) => {
+          const dateA = a.completedAt || a.createdAt
+          const dateB = b.completedAt || b.createdAt
+          return dateB - dateA
+        })
+
+        setQuestionnaires(questionnaireData)
+      } catch (err) {
+        console.error('Error loading questionnaire history:', err)
+        setError(err.message)
       } finally {
         setLoading(false)
       }
@@ -208,7 +256,12 @@ export function QuestionnaireHistorySummary() {
           <div className="flex items-center justify-between mb-2">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Most Recent</p>
-              <p className="font-semibold text-lg">{mostRecent.typeLabel}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-lg">{mostRecent.typeLabel}</p>
+                {mostRecent.source === 'assessment' && (
+                  <Badge variant="outline" className="text-xs">From Assessment</Badge>
+                )}
+              </div>
             </div>
             {mostRecent.score !== null && (
               <div className="text-right">
@@ -227,7 +280,31 @@ export function QuestionnaireHistorySummary() {
               </div>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">
+          {mostRecent.assessmentData && (
+            <div className="mt-3 pt-3 border-t border-border/50 space-y-1 text-xs text-muted-foreground">
+              {mostRecent.assessmentData.extractedIssues && mostRecent.assessmentData.extractedIssues.length > 0 && (
+                <div>
+                  <strong>Concerns:</strong> {mostRecent.assessmentData.extractedIssues.join(', ')}
+                </div>
+              )}
+              {mostRecent.assessmentData.childAge && (
+                <div><strong>Child Age:</strong> {mostRecent.assessmentData.childAge}</div>
+              )}
+              {mostRecent.assessmentData.functionalImpact && (
+                <div><strong>Functional Impact:</strong> {mostRecent.assessmentData.functionalImpact}</div>
+              )}
+              {mostRecent.assessmentData.duration && (
+                <div><strong>Duration:</strong> {mostRecent.assessmentData.duration}</div>
+              )}
+              {mostRecent.assessmentData.suitability && (
+                <div><strong>Suitability:</strong> {mostRecent.assessmentData.suitability}</div>
+              )}
+              {mostRecent.assessmentData.crisisDetected && (
+                <div className="text-destructive"><strong>Crisis Detected:</strong> Yes</div>
+              )}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground mt-2">
             {(mostRecent.completedAt || mostRecent.createdAt).toLocaleDateString()}
           </p>
         </div>
@@ -246,24 +323,53 @@ export function QuestionnaireHistorySummary() {
             <p className="text-sm font-semibold">Recent History</p>
             <div className="space-y-1">
               {questionnaires.slice(1, 4).map((q) => (
-                <div key={q.id} className="flex items-center justify-between text-sm p-2 bg-muted/20 rounded">
-                  <div className="flex items-center gap-2">
-                    <span>{q.typeLabel}</span>
-                    {q.severity && (
-                      <Badge 
-                        variant="outline" 
-                        className={`text-xs ${getSeverityDisplay(q.severity).color}`}
-                      >
-                        {getSeverityDisplay(q.severity).label}
-                      </Badge>
-                    )}
+                <div key={q.id} className="flex flex-col gap-2 text-sm p-3 bg-muted/20 rounded">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span>{q.typeLabel}</span>
+                      {q.source === 'assessment' && (
+                        <Badge variant="outline" className="text-xs">From Assessment</Badge>
+                      )}
+                      {q.severity && (
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs ${getSeverityDisplay(q.severity).color}`}
+                        >
+                          {getSeverityDisplay(q.severity).label}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {q.score !== null && <span className="font-medium">{q.score}</span>}
+                      <span className="text-xs text-muted-foreground">
+                        {(q.completedAt || q.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {q.score !== null && <span className="font-medium">{q.score}</span>}
-                    <span className="text-xs text-muted-foreground">
-                      {(q.completedAt || q.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
+                  {q.assessmentData && (
+                    <div className="mt-2 pt-2 border-t border-border/50 space-y-1 text-xs text-muted-foreground">
+                      {q.assessmentData.extractedIssues && q.assessmentData.extractedIssues.length > 0 && (
+                        <div>
+                          <strong>Concerns:</strong> {q.assessmentData.extractedIssues.join(', ')}
+                        </div>
+                      )}
+                      {q.assessmentData.childAge && (
+                        <div><strong>Child Age:</strong> {q.assessmentData.childAge}</div>
+                      )}
+                      {q.assessmentData.functionalImpact && (
+                        <div><strong>Functional Impact:</strong> {q.assessmentData.functionalImpact}</div>
+                      )}
+                      {q.assessmentData.duration && (
+                        <div><strong>Duration:</strong> {q.assessmentData.duration}</div>
+                      )}
+                      {q.assessmentData.suitability && (
+                        <div><strong>Suitability:</strong> {q.assessmentData.suitability}</div>
+                      )}
+                      {q.assessmentData.crisisDetected && (
+                        <div className="text-destructive"><strong>Crisis Detected:</strong> Yes</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -34,7 +34,7 @@ export async function createSupportChat(userId, initialMessage) {
         {
           role: 'user',
           content: initialMessage,
-          timestamp: serverTimestamp(),
+          timestamp: Timestamp.now(), // Use Timestamp.now() instead of serverTimestamp() for arrays
         },
       ],
       status: 'active',
@@ -172,7 +172,7 @@ export async function sendSupportMessage(chatId, role, content) {
     const newMessage = {
       role,
       content,
-      timestamp: serverTimestamp(),
+      timestamp: Timestamp.now(), // Use Timestamp.now() instead of serverTimestamp() for arrays
     };
 
     await updateDoc(chatRef, {

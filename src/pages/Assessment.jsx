@@ -89,7 +89,7 @@ export function AssessmentPage() {
   }
 
   const handleStartAssessment = () => {
-    navigate("/")
+    navigate("/chat")
   }
 
   if (loading) {

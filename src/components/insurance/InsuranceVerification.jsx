@@ -214,7 +214,7 @@ export function InsuranceVerification({
           <Alert>
             <CheckCircle2 className="h-4 w-4" />
             <AlertDescription>
-              Insurance coverage verified successfully!
+              <strong>Verified:</strong> Insurance coverage verified successfully!
             </AlertDescription>
           </Alert>
 

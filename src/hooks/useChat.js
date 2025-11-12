@@ -4,7 +4,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react"
-import { AssessmentEngine } from "@/services/ai/AssessmentEngine"
+import { StructuredAssessmentEngine, ASSESSMENT_PHASES } from "@/services/ai/StructuredAssessmentEngine"
 import { useAuth } from "@/contexts/AuthContext"
 import { saveConversation } from "@/services/firebase/firestore"
 
@@ -15,32 +15,37 @@ export function useChat() {
   const [error, setError] = useState(null)
   const [crisisDetected, setCrisisDetected] = useState(false)
   const [assessmentData, setAssessmentData] = useState(null)
+  const [progress, setProgress] = useState(0)
+  const [currentPhase, setCurrentPhase] = useState(null)
+  const [isComplete, setIsComplete] = useState(false)
   const engineRef = useRef(null)
   const savedConversationRef = useRef(false) // Track if conversation has been saved
 
-  // Initialize assessment engine
+  // Initialize structured assessment engine
   useEffect(() => {
     if (!engineRef.current) {
-      engineRef.current = new AssessmentEngine()
+      engineRef.current = new StructuredAssessmentEngine()
       
-      // Add initial greeting message
+      // Get first question from structured engine
+      const firstQuestion = engineRef.current.getCurrentQuestion()
       const initialMessage = {
         id: "1",
         role: "assistant",
-        content:
-          "Hello! I'm here to help you understand your child's mental health needs. This conversation is completely confidential and non-judgmental. Let's start by getting to know a bit about what's bringing you here today. What concerns have you noticed in your child recently?",
+        content: firstQuestion ? firstQuestion.question : "Hello! I'm here to help you understand your child's mental health needs. This conversation is completely confidential and non-judgmental.",
         timestamp: new Date(),
       }
       setMessages([initialMessage])
+      setCurrentPhase(ASSESSMENT_PHASES.QUESTION_1_AGE)
+      setProgress(0)
     }
   }, [])
 
   /**
-   * Send a message and get AI response
+   * Send a message and get AI response using structured assessment flow
    */
   const sendMessage = useCallback(
     async (userMessage, options = {}) => {
-      if (!userMessage.trim() || isLoading) return
+      if (!userMessage.trim() || isLoading || isComplete) return
 
       setError(null)
       setIsLoading(true)
@@ -58,8 +63,8 @@ export function useChat() {
         let assistantContent = ""
         let fullResponse = ""
 
-        // Process message with streaming if requested
-        const result = await engineRef.current.processMessage(
+        // Process response using structured assessment engine
+        const result = await engineRef.current.processResponse(
           userMessage,
           options.stream
             ? (chunk) => {
@@ -100,17 +105,18 @@ export function useChat() {
           setMessages((prev) => [...prev, assistantMsg])
         }
 
-        // Update assessment data
+        // Update assessment data and progress
         if (result.assessmentData) {
           setAssessmentData(result.assessmentData)
-          if (result.assessmentData.crisisDetected) {
+          setProgress(result.progress || 0)
+          setCurrentPhase(result.currentPhase)
+          setIsComplete(result.isComplete || false)
+          
+          if (result.assessmentData.crisisDetected || result.crisisDetected) {
             setCrisisDetected(true)
           }
           
-          // Auto-save conversation if:
-          // 1. We have at least 3 user messages (enough for assessment)
-          // 2. Assessment suitability is determined
-          // 3. Conversation hasn't been saved yet
+          // Auto-save conversation when assessment is complete
           const updatedMessages = [...messages, userMsg]
           if (!options.stream) {
             updatedMessages.push({
@@ -120,12 +126,12 @@ export function useChat() {
               timestamp: new Date(),
             })
           }
-          const userMessageCount = updatedMessages.filter(m => m.role === "user").length
-          // Auto-save if we have 3+ user messages OR if suitability is determined
+          
+          // Auto-save if assessment is complete or we have enough progress
           const shouldAutoSave = 
             !savedConversationRef.current && 
             user && 
-            (userMessageCount >= 3 || result.assessmentData.suitability === "suitable" || result.assessmentData.suitability === "not_suitable")
+            (result.isComplete || result.progress >= 50 || result.assessmentData.completed)
           
           if (shouldAutoSave && user) {
             // Save conversation asynchronously (don't block UI)
@@ -166,7 +172,7 @@ export function useChat() {
         setIsLoading(false)
       }
     },
-    [isLoading]
+    [isLoading, isComplete, messages, user]
   )
 
   /**
@@ -180,8 +186,24 @@ export function useChat() {
     setError(null)
     setCrisisDetected(false)
     setAssessmentData(null)
+    setProgress(0)
+    setCurrentPhase(null)
+    setIsComplete(false)
     setIsLoading(false)
     savedConversationRef.current = false
+    
+    // Re-initialize with first question
+    const firstQuestion = engineRef.current.getCurrentQuestion()
+    if (firstQuestion) {
+      const initialMessage = {
+        id: "1",
+        role: "assistant",
+        content: firstQuestion.question,
+        timestamp: new Date(),
+      }
+      setMessages([initialMessage])
+      setCurrentPhase(ASSESSMENT_PHASES.QUESTION_1_AGE)
+    }
   }, [])
 
   /**
@@ -247,6 +269,9 @@ export function useChat() {
     error,
     crisisDetected,
     assessmentData,
+    progress,
+    currentPhase,
+    isComplete,
     sendMessage,
     resetChat,
     getAssessmentSummary,
