@@ -88,8 +88,18 @@ function isAdmin() {
   - `allow update: if isAuthenticated() && (resource.data.userId == auth.uid || resource.data.assignedTo == auth.uid || isAdmin())`
 
 #### Insurance Coverages (`/insuranceCoverages/{coverageId}`)
-- **Read/Write**: Patient guardians only
-- **Rule**: `allow read, write: if isAuthenticated() && uid in patient.guardians`
+- **Read**: All authenticated users (for insurance verification)
+- **Write**: Patient guardians only
+- **Rule**: 
+  - `allow read: if isAuthenticated()`
+  - `allow write: if isAuthenticated() && uid in patient.guardians`
+
+#### Memberships (`/memberships/{membershipId}`)
+- **Read**: All authenticated users (for insurance pre-fill)
+- **Write**: Patient guardians only
+- **Rule**: 
+  - `allow read: if isAuthenticated()`
+  - `allow write: if isAuthenticated() && request.resource.data.userId == auth.uid`
 
 #### Knowledge Base (`/knowledgeBase/{docId}`)
 - **Read**: All authenticated users
@@ -106,7 +116,7 @@ function isAdmin() {
   - `allow write: if isAdmin()`
 
 #### Junction Tables
-- **clinicianAvailabilities**: Read by authenticated, write by admin
+- **clinicianAvailabilities**: Read by authenticated, write by admin (can update `isBooked` by authenticated users)
 - **clinicianCredentialedInsurances**: Read by authenticated, write by admin
 - **credentialedInsurances**: Read by authenticated, write by admin
 - **referralMembers**: Read by guardians
@@ -226,7 +236,7 @@ firebase deploy --only firestore:indexes
 
 ---
 
-**Last Updated**: 2025-01-XX
+**Last Updated**: 2025-01-27
 **Rules Version**: 2
 **Total Indexes**: 13
 

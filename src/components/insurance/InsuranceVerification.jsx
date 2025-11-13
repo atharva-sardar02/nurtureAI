@@ -3,7 +3,7 @@
  * Main component for insurance verification and coverage display
  */
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { InsuranceForm } from "./InsuranceForm"
 import { InsuranceCardUpload } from "./InsuranceCardUpload"
 import { CoverageDisplay } from "./CoverageDisplay"
@@ -15,16 +15,19 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { lookupInsurancePlan, checkCoverageStatus } from "@/services/insurance/InsuranceValidator"
 import { getInsuranceProviderName, matchProviderNameToId } from "@/services/insurance/InsuranceMatcher"
+import { getInsuranceDataFromMemberships } from "@/services/insurance/MembershipService"
 import { CheckCircle2, AlertCircle, Loader2, Upload, FileText } from "lucide-react"
 
 /**
  * InsuranceVerification Component
  * @param {Object} props
  * @param {Object} props.initialInsuranceData - Initial insurance data
+ * @param {string} props.patientId - Patient ID to load memberships from
  * @param {Function} props.onVerificationComplete - Callback when verification completes
  */
 export function InsuranceVerification({ 
   initialInsuranceData = null,
+  patientId = null,
   onVerificationComplete 
 }) {
   const [insuranceData, setInsuranceData] = useState(initialInsuranceData);
@@ -35,6 +38,8 @@ export function InsuranceVerification({
   const [verified, setVerified] = useState(false);
   const [ocrData, setOcrData] = useState(null);
   const [activeTab, setActiveTab] = useState("manual");
+  const [loadingMemberships, setLoadingMemberships] = useState(false);
+  const [membershipLoaded, setMembershipLoaded] = useState(false);
 
   const handleFormChange = (formData) => {
     setInsuranceData(formData);
@@ -103,6 +108,31 @@ export function InsuranceVerification({
     await handleFormSubmit(insuranceData);
   };
 
+  // Load memberships on mount if patientId is available and no initial data
+  useEffect(() => {
+    async function loadMembershipData() {
+      // Only load if we have patientId, no initial data, and haven't loaded yet
+      if (patientId && !initialInsuranceData && !membershipLoaded && !loadingMemberships) {
+        setLoadingMemberships(true);
+        try {
+          const result = await getInsuranceDataFromMemberships(patientId);
+          if (result.success && result.insuranceData) {
+            // Pre-fill form with membership data
+            setInsuranceData(result.insuranceData);
+            setMembershipLoaded(true);
+          }
+        } catch (err) {
+          console.error('Error loading membership data:', err);
+          // Don't show error to user - just continue with empty form
+        } finally {
+          setLoadingMemberships(false);
+        }
+      }
+    }
+
+    loadMembershipData();
+  }, [patientId, initialInsuranceData, membershipLoaded, loadingMemberships]);
+
   const handleOCRComplete = async (data) => {
     setOcrData(data);
     
@@ -122,6 +152,16 @@ export function InsuranceVerification({
 
   return (
     <div className="space-y-4 sm:space-y-6" role="region" aria-label="Insurance verification">
+      {/* Show message if data was pre-filled from membership */}
+      {membershipLoaded && insuranceData && (
+        <Alert>
+          <CheckCircle2 className="h-4 w-4" />
+          <AlertDescription>
+            We found existing insurance information from your account. Please verify the details below or update as needed.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Tab Selection: OCR Upload vs Manual Entry */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2" role="tablist" aria-label="Insurance entry method">
@@ -152,7 +192,7 @@ export function InsuranceVerification({
         <TabsContent value="manual" className="space-y-6">
           {/* Insurance Form */}
           <InsuranceForm
-            initialData={insuranceData}
+            initialData={insuranceData || initialInsuranceData}
             ocrData={ocrData}
             onSubmit={handleFormSubmit}
             onChange={handleFormChange}
@@ -170,7 +210,7 @@ export function InsuranceVerification({
           {/* Show form after OCR for editing */}
           {ocrData && (
             <InsuranceForm
-              initialData={insuranceData}
+              initialData={insuranceData || initialInsuranceData}
               ocrData={ocrData}
               onSubmit={handleFormSubmit}
               onChange={handleFormChange}

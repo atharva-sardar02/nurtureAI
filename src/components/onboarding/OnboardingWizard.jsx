@@ -15,6 +15,9 @@ import { QuestionnaireHistorySummary } from "./QuestionnaireHistorySummary"
 import { DataDeletionOption } from "./DataDeletionOption"
 import { ReviewStep } from "./ReviewStep"
 import { LoadingSpinner } from "@/components/common/LoadingSpinner"
+import { useState, useEffect } from "react"
+import { getOnboardingApplication } from "@/services/firebase/firestore"
+import { useAuth } from "@/contexts/AuthContext"
 
 export function OnboardingWizard() {
   const { 
@@ -26,12 +29,32 @@ export function OnboardingWizard() {
     error,
     formData,
     updateFormData,
-    validateStep
+    validateStep,
+    applicationId
   } = useOnboarding()
+  const { user } = useAuth()
+  const [patientId, setPatientId] = useState(null)
 
   const progress = getProgress()
   const stepIndex = Object.values(ONBOARDING_STEPS).indexOf(currentStep)
   const totalSteps = Object.keys(ONBOARDING_STEPS).length
+
+  // Load patientId from onboarding application when available
+  useEffect(() => {
+    async function loadPatientId() {
+      if (user && applicationId) {
+        try {
+          const result = await getOnboardingApplication(user.uid)
+          if (result.success && result.data?.patientId) {
+            setPatientId(result.data.patientId)
+          }
+        } catch (err) {
+          console.error('Error loading patientId:', err)
+        }
+      }
+    }
+    loadPatientId()
+  }, [user, applicationId])
 
   const canGoNext = () => {
     // Validate current step
@@ -77,6 +100,7 @@ export function OnboardingWizard() {
             memberId: formData.insuranceMemberId || '',
             groupNumber: formData.insuranceGroupNumber || '',
           } : null}
+          patientId={patientId}
           onVerificationComplete={(data) => {
             // Update onboarding form data with verified insurance info
             updateFormData({

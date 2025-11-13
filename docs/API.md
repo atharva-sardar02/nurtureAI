@@ -493,6 +493,116 @@ Processes insurance card image via Firebase Function.
 }
 ```
 
+#### `getPatientMemberships(patientId)` (`src/services/insurance/MembershipService.js`)
+Retrieves all memberships for a patient from the `memberships` collection.
+
+**Parameters:**
+- `patientId` (string): Patient ID (used to query `userId` field in memberships)
+
+**Returns:**
+```typescript
+{
+  success: boolean;
+  memberships?: Array<Membership>;
+  error?: string;
+}
+```
+
+**Example:**
+```javascript
+import { getPatientMemberships } from '@/services/insurance/MembershipService';
+
+const result = await getPatientMemberships('patient123');
+if (result.success) {
+  console.log('Memberships:', result.memberships);
+}
+```
+
+#### `getMembershipCoverage(membershipId)` (`src/services/insurance/MembershipService.js`)
+Retrieves the linked insurance coverage for a membership.
+
+**Parameters:**
+- `membershipId` (string): Membership document ID
+
+**Returns:**
+```typescript
+{
+  success: boolean;
+  coverage?: InsuranceCoverage;
+  error?: string;
+}
+```
+
+**Example:**
+```javascript
+import { getMembershipCoverage } from '@/services/insurance/MembershipService';
+
+const result = await getMembershipCoverage('membership123');
+if (result.success) {
+  console.log('Coverage:', result.coverage);
+}
+```
+
+#### `extractInsuranceDataFromMembership(membership, coverage)` (`src/services/insurance/MembershipService.js`)
+Extracts and formats insurance data from membership and coverage documents for form pre-filling.
+
+**Parameters:**
+- `membership` (object): Membership document data
+- `coverage` (object): Insurance coverage document data
+
+**Returns:**
+```typescript
+Promise<{
+  provider: string;           // Provider ID or name
+  memberId: string;           // Member ID
+  groupNumber: string | null; // Group number (if available)
+  insuranceProviderName: string; // Original provider name
+} | null>
+```
+
+**Example:**
+```javascript
+import { extractInsuranceDataFromMembership } from '@/services/insurance/MembershipService';
+
+const insuranceData = await extractInsuranceDataFromMembership(membership, coverage);
+if (insuranceData) {
+  console.log('Extracted data:', insuranceData);
+}
+```
+
+#### `getInsuranceDataFromMemberships(patientId)` (`src/services/insurance/MembershipService.js`)
+Orchestrates the retrieval and extraction of insurance data from a patient's memberships for pre-filling the insurance form during onboarding.
+
+**Parameters:**
+- `patientId` (string): Patient ID
+
+**Returns:**
+```typescript
+{
+  success: boolean;
+  insuranceData?: {
+    provider: string;
+    memberId: string;
+    groupNumber: string | null;
+    insuranceProviderName: string;
+  } | null;
+  error?: string;
+}
+```
+
+**Example:**
+```javascript
+import { getInsuranceDataFromMemberships } from '@/services/insurance/MembershipService';
+
+const result = await getInsuranceDataFromMemberships('patient123');
+if (result.success && result.insuranceData) {
+  // Pre-fill insurance form with result.insuranceData
+  console.log('Pre-fill data:', result.insuranceData);
+}
+```
+
+**Note:** This function gracefully handles errors and returns `{ success: true, insuranceData: null }` if no memberships are found or if extraction fails, allowing users to enter insurance information manually.
+
 ---
 
 ### Support Chat Service (`src/services/support/SupportChatService.js`)
@@ -798,7 +908,7 @@ function MyComponent() {
 
 ---
 
-**Last Updated:** 2025-01-XX  
+**Last Updated:** 2025-01-27  
 **API Version:** 1.0.0
 
 

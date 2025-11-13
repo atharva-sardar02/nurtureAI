@@ -45,6 +45,17 @@ export function InsuranceForm({
     loadProviders();
   }, []);
 
+  // Update form when initialData changes (e.g., from membership pre-fill)
+  useEffect(() => {
+    if (initialData && (initialData.provider || initialData.memberId || initialData.groupNumber)) {
+      setFormData(prev => ({
+        provider: initialData.provider || prev.provider,
+        memberId: initialData.memberId || prev.memberId,
+        groupNumber: initialData.groupNumber || prev.groupNumber,
+      }));
+    }
+  }, [initialData]);
+
   // Auto-populate from OCR data
   useEffect(() => {
     if (ocrData) {

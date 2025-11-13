@@ -67,6 +67,7 @@ npm run test:support
 - `src/services/insurance/InsuranceMatcher.js` - ✅ Covered
 - `src/services/insurance/InsuranceCalculator.js` - ✅ Covered
 - `src/services/insurance/OCRProcessor.js` - ✅ Covered (structure)
+- `src/services/insurance/MembershipService.js` - ⚠️ Manual testing (integration ready)
 - `src/services/support/SupportChatService.js` - ✅ Covered
 - `src/services/referrals/ReferralTracker.js` - ✅ Covered (structure)
 
@@ -184,7 +185,7 @@ node tests/unit/dateHelpers.test.js
 
 ---
 
-**Last Updated**: 2025-01-XX
+**Last Updated**: 2025-01-27
 **Coverage Target**: 80%+
 **Current Coverage**: ~75%
 

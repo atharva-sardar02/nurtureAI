@@ -15,13 +15,14 @@ NurtureAI provides a supportive, conversational onboarding experience for parent
 
 ### Key Features
 
-- **🤖 AI-Powered Mental Health Assessment** - Conversational screening using OpenAI GPT-4 with RAG enhancement
+- **🤖 AI-Powered Mental Health Assessment** - Structured 7-question assessment using OpenAI GPT-4 with automatic data extraction
 - **📝 Streamlined Onboarding** - Multi-step forms with progress tracking and auto-save
 - **🏥 Smart Scheduling** - Clinician-patient matching based on insurance, availability, and credentials
-- **💳 Insurance Verification** - Real-time coverage checking and cost estimation
+- **💳 Insurance Verification** - Real-time coverage checking, cost estimation, and automatic pre-fill from existing memberships
 - **📸 OCR Support** - Insurance card image upload with automatic data extraction
 - **📊 Questionnaire History** - Display past assessment scores and trends
 - **🔗 Referral Tracking** - Track referral sources and organization relationships
+- **👥 Support Chat** - Real-time support chat system with admin dashboard
 
 ---
 
@@ -258,7 +259,9 @@ nurtureAI/
 │   │   ├── firebase/       # Firebase services
 │   │   ├── ai/            # OpenAI and RAG services
 │   │   ├── scheduling/     # Scheduling logic
-│   │   └── insurance/     # Insurance services
+│   │   ├── insurance/     # Insurance services (verification, OCR, memberships)
+│   │   ├── support/       # Support chat services
+│   │   └── admin/         # Admin dashboard services
 │   ├── hooks/             # Custom React hooks
 │   ├── contexts/          # React Context providers
 │   ├── utils/             # Helper functions
@@ -369,22 +372,28 @@ Tests are integrated into each PR, not written separately. See test files in `te
 
 The project uses **16 CSV files** for test data:
 
-1. `clinician_availabilities.csv`
-2. `clinician_credentialed_insurances.csv`
-3. `clinicians_anonymized.csv`
-4. `contracts.csv`
-5. `credentialed_insurances.csv`
-6. `documents.csv`
-7. `insurance_coverages.csv`
-8. `kinships.csv` (uses numeric codes - requires mapping)
-9. `memberships.csv`
-10. `org_contracts.csv`
-11. `orgs.csv`
-12. `patient_availabilities.csv`
-13. `patients_and_guardians_anonymized.csv`
-14. `questionnaires.csv`
-15. `referral_members.csv`
-16. `referrals.csv`
+1. `clinician_availabilities.csv` - Clinician availability slots
+2. `clinician_credentialed_insurances.csv` - Clinician insurance credentials
+3. `clinicians_anonymized.csv` - Clinician profiles
+4. `contracts.csv` - Organization contracts
+5. `credentialed_insurances.csv` - Insurance credentialing data
+6. `documents.csv` - Patient documents
+7. `insurance_coverages.csv` - Insurance coverage details (linked to memberships)
+8. `kinships.csv` - Kinship relationships (uses numeric codes - requires mapping)
+9. `memberships.csv` - Patient insurance memberships (used for automatic insurance pre-fill)
+10. `org_contracts.csv` - Organization contract details
+11. `orgs.csv` - Organization information
+12. `patient_availabilities.csv` - Patient availability preferences
+13. `patients_and_guardians_anonymized.csv` - Patient and guardian profiles
+14. `questionnaires.csv` - Historical questionnaire responses
+15. `referral_members.csv` - Referral member relationships
+16. `referrals.csv` - Referral information
+
+**Key Collections:**
+- **memberships** - Used to automatically pre-fill insurance information during onboarding
+- **insuranceCoverages** - Linked to memberships, contains detailed insurance plan information
+- **clinicians** - Used for matching and scheduling
+- **clinicianAvailabilities** - Used for appointment booking
 
 Import scripts are in `scripts/` directory. Run `npm run seed:database` to import all data.
 
@@ -490,8 +499,8 @@ For questions or issues:
 
 ---
 
-**Last Updated:** 2025-01-XX  
-**Version:** 1.0.0  
+**Last Updated:** 2025-01-27  
+**Version:** 1.1.0  
 **Status:** ✅ Complete - Ready for Production Deployment
 
 ---
@@ -510,12 +519,13 @@ For questions or issues:
 - ✅ Data Import & Validation
 - ✅ Authentication System
 - ✅ Core UI Components
-- ✅ AI Chat Interface
-- ✅ Onboarding Form System
-- ✅ Scheduling System
-- ✅ Insurance Verification & OCR
+- ✅ AI Chat Interface (Structured 7-Question Assessment)
+- ✅ Onboarding Form System (with auto-save and step persistence)
+- ✅ Scheduling System (with appointment management)
+- ✅ Insurance Verification & OCR (with automatic pre-fill from memberships)
 - ✅ Questionnaire & Referral Integration
-- ✅ Support Chat System
+- ✅ Support Chat System (with admin dashboard)
+- ✅ Admin Dashboard (real-time statistics)
 - ✅ UI Polish & Responsive Design
 - ✅ Testing Suite (400+ tests)
 - ✅ Security Rules & Indexes

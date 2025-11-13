@@ -264,8 +264,10 @@ Test critical user flows:
    - Verify appointment created
 
 5. **Insurance Verification**
+   - Verify automatic pre-fill from memberships (if patient has existing insurance)
    - Upload insurance card (if OCR enabled)
    - Verify coverage display
+   - Test manual entry if no memberships exist
 
 ### 7.2 Monitor Logs
 
@@ -502,7 +504,7 @@ firebase hosting:channel:list
 
 ---
 
-**Last Updated:** 2025-01-XX  
+**Last Updated:** 2025-01-27  
 **Deployment Version:** 1.0.0
 
 

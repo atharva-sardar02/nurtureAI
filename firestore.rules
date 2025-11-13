@@ -65,6 +65,19 @@ service cloud.firestore {
                     request.auth.uid in get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardians;
     }
     
+    // Memberships - read by authenticated users (for insurance pre-filling), write by guardians only
+    match /memberships/{membershipId} {
+      allow read: if isAuthenticated();
+      // For write, check if user is a guardian of the patient (userId in memberships is the patientId)
+      allow write: if isAuthenticated() && 
+                    (resource.data.userId != null && 
+                     exists(/databases/$(database)/documents/patients/$(resource.data.userId)) &&
+                     request.auth.uid in get(/databases/$(database)/documents/patients/$(resource.data.userId)).data.guardians) ||
+                    (resource.data.user_id != null && 
+                     exists(/databases/$(database)/documents/patients/$(resource.data.user_id)) &&
+                     request.auth.uid in get(/databases/$(database)/documents/patients/$(resource.data.user_id)).data.guardians);
+    }
+    
     // Clinician availabilities - read by authenticated users (for scheduling)
     match /clinicianAvailabilities/{availabilityId} {
       allow read: if isAuthenticated();
